@@ -29,6 +29,10 @@ spidev>=3.6
 RPi.GPIO>=0.7.1
 smbus2>=0.4.0
 
+# Camera
+picamera2>=0.3.0
+opencv-python>=4.9.0
+
 # TTS
 piper-tts>=1.2.0
 

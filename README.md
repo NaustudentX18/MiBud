@@ -10,7 +10,8 @@ A versatile, privacy-first AI assistant for Raspberry Pi Zero 2 W with WhisPlay 
 
 ### 🤖 AI Companionship
 - **20+ Unique Personalities** - From Chef to Therapist, Teacher to Comedian
-- **Custom Personality Creator** - Build your own
+- **Custom Personality Creator** - Build your own with web UI
+- **Vision Support** - See and understand images
 - **Dual AI Mode** - Cloud + Offline working together
 - **Multi-Provider Support** - OpenAI, Anthropic, Google, DeepSeek, Ollama
 
@@ -18,18 +19,46 @@ A versatile, privacy-first AI assistant for Raspberry Pi Zero 2 W with WhisPlay 
 - **100% Offline Mode** - No internet required
 - **Local AI** - Ollama with GGUF models
 - **No Data Collection** - Your conversations stay yours
-- **Encrypted Storage** - Secure conversation history
+- **Speaker Recognition** - Knows who's talking (optional)
+
+### 📷 Vision Capabilities
+- **Camera Support** - Picamera2, USB cameras
+- **Image Understanding** - Ask about what you see
+- **Live Streaming** - Continuous capture mode
+
+### 🎤 Voice & Audio
+- **Wake Word Detection** - "Hey MiBud" activation
+- **Voice Activity Detection** - Knows when you're speaking
+- **Push-to-Talk** - Physical button activation
+- **Multiple TTS Options** - OpenAI, Piper, Coqui
 
 ### 📺 WhisPlay HAT Integration
 - **240x280 Display** - Beautiful animations and UI
+- **20+ Themes** - Match your personality
 - **WM8960 Audio** - Crystal clear speech
 - **RGB LED** - Matches your personality
-- **GPIO Buttons** - Physical control
+- **GPIO Buttons** - Physical control with long-press
 
 ### 🔋 Battery Powered
 - **PiSugar 3 Support** - 8+ hours portable
 - **Smart Power Management** - Auto sleep/wake
 - **Battery Monitoring** - Always know your status
+
+### 🔗 Multi-Device Sync
+- **Device Discovery** - Automatic on network
+- **Settings Sync** - Share across devices
+- **Peer-to-Peer** - No cloud required
+
+### 🔔 Anomaly Detection
+- **Pattern Monitoring** - Unusual activity alerts
+- **Audio Level Monitoring** - Detect anomalies
+- **Battery Health** - Sensor error detection
+
+### 🌐 Web Interface
+- **Setup Wizard** - Easy first-time configuration
+- **Dashboard** - Real-time monitoring and control
+- **Personality Creator** - Visual personality builder
+- **API Endpoints** - Full REST API
 
 ---
 
@@ -52,7 +81,6 @@ cd MiBud
 bash setup.sh
 
 # Start MiBud
-source venv/bin/activate
 python -m core.main
 ```
 
@@ -97,7 +125,7 @@ python -m core.main
 
 ### Cloud (Free Tier Available)
 - **OpenRouter** - Gemini, Llama, Mixtral (FREE)
-- **OpenAI** - GPT-4o, GPT-4o-mini
+- **OpenAI** - GPT-4o with Vision
 - **Anthropic** - Claude 3.5 Sonnet
 - **Google** - Gemini 2.0 Flash
 - **DeepSeek** - DeepSeek Chat
@@ -113,26 +141,35 @@ python -m core.main
 MiBud/
 ├── core/               # Core application
 │   ├── main.py         # Entry point
-│   ├── config.py      # Configuration
-│   ├── state.py       # State machine
-│   └── events.py      # Event system
-├── ai/                 # AI providers
-│   └── router.py      # Multi-provider routing
+│   ├── config.py       # Configuration
+│   ├── state.py        # State machine
+│   └── events.py       # Event system
+├── ai/                 # AI system
+│   ├── router.py       # Multi-provider routing
+│   ├── wakeword.py     # Wake word detection
+│   ├── speaker.py      # Speaker recognition
+│   └── anomaly.py      # Anomaly detection
 ├── personalities/      # Personality system
-│   └── presets.py     # 20+ personalities
+│   ├── presets.py      # 20+ personalities
+│   └── manager.py     # Custom personality manager
 ├── hardware/          # Hardware drivers
-│   ├── display.py    # ST7789 display
-│   ├── audio.py      # WM8960 audio
-│   ├── buttons.py    # GPIO buttons
-│   ├── battery.py     # PiSugar 3
-│   └── led.py         # RGB LED
+│   ├── display.py     # ST7789 display
+│   ├── audio.py       # WM8960 audio
+│   ├── buttons.py      # GPIO buttons
+│   ├── battery.py      # PiSugar 3
+│   ├── led.py          # RGB LED
+│   └── camera.py       # Camera support
 ├── web/               # Web interface
-│   ├── server.py     # Flask server
-│   ├── wizard/       # Setup wizard
-│   └── dashboard/    # Main dashboard
-├── config/            # Configuration files
-├── models/           # Local AI models
-└── requirements.txt  # Python dependencies
+│   ├── server.py      # Flask server
+│   ├── wizard.py      # Setup wizard
+│   └── templates/     # HTML templates
+├── sync/              # Multi-device sync
+│   └── manager.py     # Sync manager
+├── utils/             # Utilities
+│   └── utilities.py   # Timers, reminders, notes
+├── home/              # Home automation
+│   └── automation.py  # GPIO + Home Assistant
+└── requirements.txt   # Python dependencies
 ```
 
 ---
@@ -150,6 +187,12 @@ Edit `config/config.json`:
     "personality": {
         "current": "assistant"
     },
+    "features": {
+        "enable_wake_word": true,
+        "enable_speaker_recognition": false,
+        "enable_anomaly_detection": false,
+        "enable_multi_device_sync": false
+    },
     "api_keys": {
         "openrouter": "sk-or-your-key",
         "openai": "sk-your-key"
@@ -164,8 +207,9 @@ Edit `config/config.json`:
 ### Physical Buttons
 - **Button A (Short)** - Activate listening
 - **Button A (Long)** - Cancel operation
+- **Button A (Hold)** - Emergency stop
 - **Button B (Short)** - Cycle personality
-- **Button B (Long)** - Emergency stop
+- **Button B (Long)** - Settings menu
 
 ### Voice Commands
 - Say **"Hey MiBud"** - Wake word (if enabled)
@@ -180,11 +224,24 @@ Access from any device on your network:
 - **Setup Wizard**: `http://mibud.local:5000/wizard`
 - **Dashboard**: `http://mibud.local:5000/dashboard`
 
-Features:
+### Dashboard Features
 - Real-time conversation
 - Personality switching
-- Settings control
+- Custom personality creator
+- Camera capture
 - System monitoring
+- Alert history
+
+### API Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/status` | GET | System status |
+| `/api/config` | GET/POST | Configuration |
+| `/api/personality/list` | GET | All personalities |
+| `/api/personality/create` | POST | Create custom |
+| `/api/camera/capture` | GET | Capture image |
+| `/api/system/info` | GET | System info |
+| `/api/alerts` | GET | Alert history |
 
 ---
 
@@ -206,14 +263,22 @@ Features:
 - No data is sent to external servers without consent
 - Conversations stored locally
 - API keys stored securely in config
+- Anomaly detection for tampering alerts
 
 ---
 
-## 📚 Documentation
+## 🧪 Development
 
-- [Setup Guide](SETUP_GUIDE.md) - Detailed installation
-- [Checklist](CHECKLIST.md) - Implementation progress
-- [Personalities](PERSONALITIES.md) - Personality details
+```bash
+# Install dev dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest tests/
+
+# Run linting
+ruff check .
+```
 
 ---
 
@@ -224,6 +289,7 @@ Contributions welcome! Areas needing help:
 - New personalities
 - UI/UX improvements
 - Documentation
+- Testing on hardware
 
 ---
 

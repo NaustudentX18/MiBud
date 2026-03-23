@@ -139,16 +139,28 @@ class MiBudApp:
         """Initialize AI system"""
         try:
             from ai.router import AIRouter
+            from ai.wakeword import WakeWordDetector
             
             log.info("🧠 Initializing AI system...")
             
             self.ai_router = AIRouter(self.config)
             await self.ai_router.initialize()
             
+            self.wake_word = WakeWordDetector(self.config, self.audio)
+            self.wake_word.set_callback(self._on_wake_word)
+            await self.wake_word.initialize()
+            await self.wake_word.start()
+            
             log.info("✅ AI system initialized")
             
         except Exception as e:
             log.error(f"AI init failed: {e}")
+            
+    async def _on_wake_word(self, wake_word: str):
+        """Handle wake word detection"""
+        log.info(f"🔔 Wake word triggered: {wake_word}")
+        self.event_bus.dispatch("wake_word_detected", {"word": wake_word})
+        self.state.set_state("listening")
             
     async def _init_web(self):
         """Initialize web interface"""
@@ -210,6 +222,8 @@ class MiBudApp:
         self.running = False
         
         try:
+            if hasattr(self, 'wake_word'):
+                await self.wake_word.stop()
             if hasattr(self, 'display'):
                 self.display.show_shutdown()
             if hasattr(self, 'web_server'):

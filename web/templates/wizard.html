@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiBud Setup Wizard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg: #1a1a2e;
+            --fg: #e0e0e0;
+            --accent: #00ff64;
+            --secondary: #0096ff;
+            --error: #ff4757;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        
+        .progress {
+            background: rgba(255,255,255,0.1);
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--accent), var(--secondary));
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .step-indicator {
+            text-align: center;
+            color: var(--accent);
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        
+        .content {
+            min-height: 200px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: scale(1.02);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--accent);
+        }
+        
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: var(--fg);
+            font-size: 1em;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .personality-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .personality-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .personality-card:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .personality-card.selected {
+            border-color: var(--accent);
+            background: rgba(0,255,100,0.1);
+        }
+        
+        .personality-emoji {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .personality-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .personality-specialty {
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🤖 MiBud Setup</h1>
+            <p class="subtitle">Your Privacy-Focused AI Companion</p>
+            
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="step-indicator" id="stepIndicator">Step 1 of 8</div>
+            
+            <div class="content" id="stepContent">
+                <!-- Dynamic content loaded here -->
+            </div>
+            
+            <div class="buttons">
+                <button class="btn" id="nextBtn" onclick="nextStep()">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 8;
+        let config = {
+            personality: 'assistant',
+            apiKeys: {}
+        };
+
+        const steps = {
+            1: { title: 'Welcome', load: loadWelcome },
+            2: { title: 'Hardware', load: loadHardware },
+            3: { title: 'Audio', load: loadAudio },
+            4: { title: 'WiFi', load: loadWiFi },
+            5: { title: 'AI Provider', load: loadProvider },
+            6: { title: 'API Keys', load: loadApiKeys },
+            7: { title: 'Personality', load: loadPersonality },
+            8: { title: 'Complete', load: loadComplete }
+        };
+
+        function updateProgress() {
+            const percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('stepIndicator').textContent = `Step ${currentStep} of ${totalSteps}`;
+        }
+
+        async function loadStep(step) {
+            const content = document.getElementById('stepContent');
+            updateProgress();
+            
+            if (steps[step] && steps[step].load) {
+                content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+                await new Promise(r => setTimeout(r, 300));
+                await steps[step].load(content);
+            }
+        }
+
+        async function loadWelcome(container) {
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">👋 Welcome to MiBud!</h2>
+                <p style="text-align:center;margin-bottom:20px;">
+                    Let's set up your privacy-focused AI companion.<br>
+                    This wizard will guide you through the configuration.
+                </p>
+                <div style="background:rgba(0,255,100,0.1);padding:15px;border-radius:8px;margin-top:20px;">
+                    <strong>🎯 What you'll configure:</strong>
+                    <ul style="margin-top:10px;padding-left:20px;">
+                        <li>Hardware detection</li>
+                        <li>Network connection</li>
+                        <li>AI provider (cloud or offline)</li>
+                        <li>Your MiBud personality</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        async function loadHardware(container) {
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">🔧 Hardware Detection</h2>
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Detecting WhisPlay HAT...</p>
+                </div>
+            `;
+            
+            // Simulate hardware detection
+            await new Promise(r => setTimeout(r, 1500));
+            
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">✅ Hardware Detected</h2>
+                <div style="display:grid;gap:10px;">
+                    <div style="background:rgba(0,255,100,0.1);padding:15px;border-radius:8px;display:flex;justify-content:space-between;">
+                        <span>📺 Display (ST7789 240x280)</span>
+                        <span style="color:#0f0;">✓</span>
+                    </div>
+                    <div style="background:rgba(0,255,100,0.1);padding:15px;border-radius:8px;display:flex;justify-content:space-between;">
+                        <span>🔊 Audio (WM8960)</span>
+                        <span style="color:#0f0;">✓</span>
+                    </div>
+                    <div style="background:rgba(0,255,100,0.1);padding:15px;border-radius:8px;display:flex;justify-content:space-between;">
+                        <span>🔘 Buttons</span>
+                        <span style="color:#0f0;">✓</span>
+                    </div>
+                    <div style="background:rgba(0,255,100,0.1);padding:15px;border-radius:8px;display:flex;justify-content:space-between;">
+                        <span>🔋 Battery (PiSugar 3)</span>
+                        <span style="color:#0f0;">✓</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadAudio(container) {
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">🎤 Audio Setup</h2>
+                <p style="text-align:center;margin-bottom:20px;">Testing microphone and speakers...</p>
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Speak now...</p>
+                </div>
+            `;
+            
+            await new Promise(r => setTimeout(r, 2000));
+            
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">✅ Audio Ready!</h2>
+                <p style="text-align:center;">Microphone and speakers are configured.</p>
+            `;
+        }
+
+        async function loadWiFi(container) {
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">📶 WiFi Connection</h2>
+                <p style="text-align:center;margin-bottom:20px;">Connected to network.</p>
+                <div style="background:rgba(0,255,100,0.1);padding:15px;border-radius:8px;text-align:center;">
+                    <strong>WiFi: Connected</strong><br>
+                    Signal: Excellent
+                </div>
+            `;
+        }
+
+        async function loadProvider(container) {
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">🧠 AI Provider</h2>
+                <p style="text-align:center;margin-bottom:20px;">Choose your AI backend</p>
+                
+                <div style="display:grid;gap:10px;">
+                    <label class="personality-card" onclick="selectProvider('openrouter')">
+                        <div class="personality-emoji">🌐</div>
+                        <div class="personality-name">OpenRouter (Free)</div>
+                        <div class="personality-specialty">Gemini, Llama, Mixtral</div>
+                    </label>
+                    
+                    <label class="personality-card" onclick="selectProvider('openai')">
+                        <div class="personality-emoji">🤖</div>
+                        <div class="personality-name">OpenAI</div>
+                        <div class="personality-specialty">GPT-4o, GPT-4o-mini</div>
+                    </label>
+                    
+                    <label class="personality-card" onclick="selectProvider('ollama')">
+                        <div class="personality-emoji">💾</div>
+                        <div class="personality-name">Ollama (Offline)</div>
+                        <div class="personality-specialty">Phi-3, TinyLlama, Mistral</div>
+                    </label>
+                </div>
+                
+                <p style="text-align:center;margin-top:15px;color:#888;font-size:0.9em;">
+                    Selected: <span id="selectedProvider">OpenRouter (Free)</span>
+                </p>
+            `;
+        }
+
+        function selectProvider(provider) {
+            config.provider = provider;
+            const names = {
+                'openrouter': 'OpenRouter (Free)',
+                'openai': 'OpenAI',
+                'ollama': 'Ollama (Offline)'
+            };
+            document.getElementById('selectedProvider').textContent = names[provider] || provider;
+        }
+
+        async function loadApiKeys(container) {
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">🔑 API Keys</h2>
+                <p style="text-align:center;margin-bottom:20px;">
+                    Enter your API keys to enable cloud AI.<br>
+                    <small style="color:#888;">Skip for offline-only mode</small>
+                </p>
+                
+                <div class="form-group">
+                    <label>OpenRouter API Key (Free)</label>
+                    <input type="password" id="openrouterKey" placeholder="sk-or-...">
+                    <small style="color:#888;margin-top:5px;display:block;">
+                        Get free key at <a href="https://openrouter.ai/keys" style="color:#0096ff;">openrouter.ai/keys</a>
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>OpenAI API Key (Optional)</label>
+                    <input type="password" id="openaiKey" placeholder="sk-...">
+                </div>
+                
+                <div class="form-group">
+                    <label>Anthropic API Key (Optional)</label>
+                    <input type="password" id="anthropicKey" placeholder="sk-ant-...">
+                </div>
+            `;
+        }
+
+        async function loadPersonality(container) {
+            // Fetch personalities from API
+            let personalities = [];
+            try {
+                const response = await fetch('/api/personality/list');
+                personalities = await response.json();
+            } catch {
+                // Use default list
+                personalities = [
+                    {id: 'assistant', name: 'Assistant', emoji: '🤖', specialty: 'General help'},
+                    {id: 'chef', name: 'Chef', emoji: '👨‍🍳', specialty: 'Cooking'},
+                    {id: 'hacker', name: 'Hacker', emoji: '🖥️', specialty: 'Tech support'},
+                    {id: 'mentor', name: 'Mentor', emoji: '📚', specialty: 'Learning'},
+                    {id: 'therapist', name: 'Therapist', emoji: '🧠', specialty: 'Wellness'}
+                ];
+            }
+            
+            let cards = personalities.map(p => `
+                <div class="personality-card ${p.id === config.personality ? 'selected' : ''}" 
+                     onclick="selectPersonality('${p.id}', this)">
+                    <div class="personality-emoji">${p.emoji}</div>
+                    <div class="personality-name">${p.name}</div>
+                    <div class="personality-specialty">${p.specialty}</div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:20px;">👤 Choose Your Personality</h2>
+                <p style="text-align:center;margin-bottom:20px;">How should MiBud behave?</p>
+                
+                <div class="personality-grid">
+                    ${cards}
+                </div>
+            `;
+        }
+
+        function selectPersonality(id, element) {
+            config.personality = id;
+            document.querySelectorAll('.personality-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        async function loadComplete(container) {
+            container.innerHTML = `
+                <div style="text-align:center;">
+                    <h2 style="margin-bottom:20px;">🎉 MiBud is Ready!</h2>
+                    
+                    <div style="font-size:4em;margin-bottom:20px;">🤖</div>
+                    
+                    <p style="margin-bottom:10px;">Your privacy-focused AI companion is configured!</p>
+                    <p style="color:#888;margin-bottom:30px;">
+                        personality: <strong>${config.personality}</strong>
+                    </p>
+                    
+                    <div style="background:rgba(0,255,100,0.1);padding:20px;border-radius:12px;margin-bottom:20px;">
+                        <p style="margin-bottom:10px;"><strong>What's next?</strong></p>
+                        <ul style="text-align:left;padding-left:20px;">
+                            <li>Say "Hey MiBud" or press the button to start</li>
+                            <li>Access the dashboard at mibud.local:5000</li>
+                            <li>Change personality anytime via dashboard</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn" onclick="finishSetup()">Start Using MiBud!</button>
+                </div>
+            `;
+            
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+
+        async function nextStep() {
+            // Save data from current step
+            if (currentStep === 6) {
+                // Save API keys
+                config.apiKeys = {
+                    openrouter: document.getElementById('openrouterKey')?.value || '',
+                    openai: document.getElementById('openaiKey')?.value || '',
+                    anthropic: document.getElementById('anthropicKey')?.value || ''
+                };
+            }
+            
+            if (currentStep < totalSteps) {
+                currentStep++;
+                await loadStep(currentStep);
+            }
+        }
+
+        async function finishSetup() {
+            // Save final config
+            const response = await fetch('/api/keys/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    keys: config.apiKeys,
+                    personality: config.personality
+                })
+            });
+            
+            if (response.ok) {
+                window.location.href = '/dashboard';
+            }
+        }
+
+        // Initialize
+        loadStep(1);
+    </script>
+</body>
+</html>

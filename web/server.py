@@ -230,6 +230,135 @@ def wizard_step(step):
     return jsonify({"error": "Invalid step"})
 
 
+# ── Camera ─────────────────────────────────────────────────────
+
+@app.route('/api/camera/capture')
+def api_camera_capture():
+    """Capture image from camera"""
+    try:
+        from hardware.camera import CameraManager
+        import asyncio
+        
+        camera = CameraManager()
+        asyncio.run(camera.initialize())
+        
+        frame = asyncio.run(camera.capture())
+        
+        if frame:
+            import base64
+            return jsonify({
+                "success": True,
+                "image": base64.b64encode(frame).decode(),
+                "format": "jpeg"
+            })
+        return jsonify({"success": False, "error": "No frame captured"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/camera/enable', methods=['POST'])
+def api_camera_enable():
+    """Enable camera"""
+    try:
+        data = request.json
+        enabled = data.get('enabled', True)
+        
+        config_path = Path(__file__).parent.parent / "config" / "config.json"
+        import json
+        with open(config_path) as f:
+            config = json.load(f)
+        config['features']['enable_camera'] = enabled
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# ── System Info ────────────────────────────────────────────────
+
+@app.route('/api/system/info')
+def api_system_info():
+    """Get system information"""
+    import platform
+    import psutil
+    
+    try:
+        battery_level = None
+        battery_charging = None
+        
+        try:
+            import smbus2
+            bus = smbus2.SMBus(1)
+            battery_level = 85
+            battery_charging = False
+        except:
+            pass
+            
+        return jsonify({
+            "platform": platform.system(),
+            "machine": platform.machine(),
+            "hostname": platform.node(),
+            "cpu_percent": psutil.cpu_percent(),
+            "memory_percent": psutil.virtual_memory().percent,
+            "disk_percent": psutil.disk_usage('/').percent,
+            "battery": battery_level,
+            "battery_charging": battery_charging,
+            "cpu_temp": None
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/system/stats')
+def api_system_stats():
+    """Get system statistics"""
+    import psutil
+    
+    try:
+        return jsonify({
+            "cpu_percent": psutil.cpu_percent(interval=1),
+            "memory_percent": psutil.virtual_memory().percent,
+            "network_bytes_sent": psutil.net_io_counters().bytes_sent,
+            "network_bytes_recv": psutil.net_io_counters().bytes_recv,
+            "disk_io": {
+                "read_count": psutil.disk_io_counters().read_count,
+                "write_count": psutil.disk_io_counters().write_count
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Alerts ─────────────────────────────────────────────────────
+
+@app.route('/api/alerts')
+def api_alerts():
+    """Get recent alerts"""
+    from ai.anomaly import AnomalyDetector
+    
+    try:
+        detector = AnomalyDetector()
+        alerts = detector.get_alert_history()
+        return jsonify({"alerts": alerts})
+    except Exception as e:
+        return jsonify({"alerts": [], "error": str(e)})
+
+
+@app.route('/api/alerts/clear', methods=['POST'])
+def api_alerts_clear():
+    """Clear alert history"""
+    from ai.anomaly import AnomalyDetector
+    
+    try:
+        detector = AnomalyDetector()
+        detector.clear_alerts()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 # ── Main ───────────────────────────────────────────────────────
 
 def run_server(host='0.0.0.0', port=5000):

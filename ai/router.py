@@ -402,3 +402,183 @@ class AIRouter:
             
         return AIResponse(text="", provider="ollama", model=model,
                         latency_ms=int((time.time() - start_time) * 1000), error=str(e))
+
+    async def generate_with_vision(self, prompt: str, image_data: bytes,
+                                   context: List[ChatMessage] = None) -> AIResponse:
+        """Generate AI response with image input (vision-capable models)"""
+        start_time = time.time()
+        
+        providers_with_vision = ["openai", "anthropic", "google", "openrouter"]
+        
+        for provider_name in providers_with_vision:
+            if provider_name in self._providers:
+                try:
+                    response = await self._generate_vision_with_provider(
+                        provider_name, prompt, image_data, context, start_time
+                    )
+                    if response and not response.error:
+                        return response
+                except Exception as e:
+                    log.warning(f"Vision {provider_name} failed: {e}")
+                    
+        return AIResponse(
+            text="Sorry, vision processing is not available.",
+            provider="none",
+            model="none",
+            latency_ms=int((time.time() - start_time) * 1000),
+            error="No vision-capable provider available"
+        )
+        
+    async def _generate_vision_with_provider(self, provider: str, prompt: str,
+                                           image_data: bytes,
+                                           context: List[ChatMessage],
+                                           start_time: float) -> AIResponse:
+        """Generate vision response with specific provider"""
+        import base64
+        
+        try:
+            if provider == "openai":
+                return await self._generate_vision_openai(prompt, image_data, context, start_time)
+            elif provider == "anthropic":
+                return await self._generate_vision_anthropic(prompt, image_data, context, start_time)
+            elif provider == "google":
+                return await self._generate_vision_google(prompt, image_data, start_time)
+            elif provider == "openrouter":
+                return await self._generate_vision_openrouter(prompt, image_data, context, start_time)
+        except Exception as e:
+            log.error(f"Vision provider {provider} error: {e}")
+            return AIResponse(text="", provider=provider, model="vision",
+                            latency_ms=int((time.time() - start_time) * 1000), error=str(e))
+                            
+    async def _generate_vision_openai(self, prompt: str, image_data: bytes,
+                                     context: List[ChatMessage], start_time: float) -> AIResponse:
+        """Generate with OpenAI Vision"""
+        client = self._providers["openai"]["client"]
+        model = "gpt-4o"
+        
+        import base64
+        image_b64 = base64.b64encode(image_data).decode()
+        
+        messages = []
+        if context:
+            messages.extend([{"role": m.role, "content": m.content} for m in context])
+            
+        user_content = [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}
+        ]
+        messages.append({"role": "user", "content": user_content})
+        
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=500
+            )
+            
+            return AIResponse(
+                text=response.choices[0].message.content,
+                provider="openai",
+                model=model,
+                latency_ms=int((time.time() - start_time) * 1000)
+            )
+        except Exception as e:
+            return AIResponse(text="", provider="openai", model=model,
+                            latency_ms=int((time.time() - start_time) * 1000), error=str(e))
+                            
+    async def _generate_vision_anthropic(self, prompt: str, image_data: bytes,
+                                       context: List[ChatMessage], start_time: float) -> AIResponse:
+        """Generate with Anthropic Vision"""
+        client = self._providers["anthropic"]["client"]
+        model = "claude-3-5-sonnet-latest"
+        
+        import base64
+        image_b64 = base64.b64encode(image_data).decode()
+        
+        messages = []
+        if context:
+            messages.extend([{"role": m.role, "content": m.content} for m in context])
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image_b64}}
+            ]
+        })
+        
+        try:
+            response = client.messages.create(
+                model=model,
+                max_tokens=500,
+                messages=messages
+            )
+            
+            return AIResponse(
+                text=response.content[0].text,
+                provider="anthropic",
+                model=model,
+                latency_ms=int((time.time() - start_time) * 1000)
+            )
+        except Exception as e:
+            return AIResponse(text="", provider="anthropic", model=model,
+                            latency_ms=int((time.time() - start_time) * 1000), error=str(e))
+                            
+    async def _generate_vision_google(self, prompt: str, image_data: bytes,
+                                     start_time: float) -> AIResponse:
+        """Generate with Google Gemini Vision"""
+        import google.generativeai as genai
+        from PIL import Image
+        import io
+        
+        client = self._providers["google"]["client"]
+        model_name = "gemini-2.0-flash"
+        
+        try:
+            image = Image.open(io.BytesIO(image_data))
+            model_instance = client.GenerativeModel(model_name)
+            response = model_instance.generate_content([prompt, image])
+            
+            return AIResponse(
+                text=response.text,
+                provider="google",
+                model=model_name,
+                latency_ms=int((time.time() - start_time) * 1000)
+            )
+        except Exception as e:
+            return AIResponse(text="", provider="google", model=model_name,
+                            latency_ms=int((time.time() - start_time) * 1000), error=str(e))
+                            
+    async def _generate_vision_openrouter(self, prompt: str, image_data: bytes,
+                                         context: List[ChatMessage], start_time: float) -> AIResponse:
+        """Generate with OpenRouter Vision (via OpenAI compatible API)"""
+        client = self._providers["openrouter"]["client"]
+        model = "google/gemini-2.0-flash"
+        
+        import base64
+        image_b64 = base64.b64encode(image_data).decode()
+        
+        messages = []
+        if context:
+            messages.extend([{"role": m.role, "content": m.content} for m in context])
+            
+        user_content = [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}
+        ]
+        messages.append({"role": "user", "content": user_content})
+        
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+            
+            return AIResponse(
+                text=response.choices[0].message.content,
+                provider="openrouter",
+                model=model,
+                latency_ms=int((time.time() - start_time) * 1000)
+            )
+        except Exception as e:
+            return AIResponse(text="", provider="openrouter", model=model,
+                            latency_ms=int((time.time() - start_time) * 1000), error=str(e))

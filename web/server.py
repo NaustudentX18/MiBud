@@ -110,7 +110,6 @@ def api_personality_set():
     personality = data.get('personality')
     
     if personality:
-        # Save to config
         config_path = Path(__file__).parent.parent / "config" / "config.json"
         import json
         with open(config_path) as f:
@@ -122,6 +121,58 @@ def api_personality_set():
         return jsonify({"success": True})
     
     return jsonify({"success": False, "error": "No personality specified"})
+
+
+@app.route('/api/personality/create', methods=['POST'])
+def api_personality_create():
+    """Create a new custom personality"""
+    try:
+        from personalities.manager import PersonalityManager
+        manager = PersonalityManager()
+        personality = manager.create_personality(request.json)
+        return jsonify({"success": True, "personality": {
+            "id": personality.id,
+            "name": personality.name,
+            "description": personality.description,
+            "emoji": personality.emoji
+        }})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/personality/<personality_id>')
+def api_personality_get(personality_id):
+    """Get personality details"""
+    from personalities.manager import PersonalityManager
+    manager = PersonalityManager()
+    details = manager.get_personality_details(personality_id)
+    if details:
+        return jsonify(details)
+    return jsonify({"error": "Personality not found"}), 404
+
+
+@app.route('/api/personality/<personality_id>', methods=['PUT'])
+def api_personality_update(personality_id):
+    """Update a custom personality"""
+    try:
+        from personalities.manager import PersonalityManager
+        manager = PersonalityManager()
+        personality = manager.update_personality(personality_id, request.json)
+        if personality:
+            return jsonify({"success": True})
+        return jsonify({"success": False, "error": "Custom personality not found"}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/personality/<personality_id>', methods=['DELETE'])
+def api_personality_delete(personality_id):
+    """Delete a custom personality"""
+    from personalities.manager import PersonalityManager
+    manager = PersonalityManager()
+    if manager.delete_personality(personality_id):
+        return jsonify({"success": True})
+    return jsonify({"success": False, "error": "Personality not found or is a preset"}), 404
 
 
 @app.route('/api/providers')

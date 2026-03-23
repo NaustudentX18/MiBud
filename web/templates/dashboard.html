@@ -250,6 +250,104 @@
                 order: -1;
             }
         }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.3em;
+            color: var(--accent);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--fg);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: var(--fg);
+            font-size: 1em;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .create-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .create-btn:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -285,6 +383,9 @@
                 <div class="personality-selector" id="personalitySelector">
                     <!-- Populated by JS -->
                 </div>
+                <button class="quick-btn" onclick="openPersonalityCreator()" style="margin-top:10px;">
+                    ✨ Create Custom
+                </button>
             </div>
             
             <div class="card">
@@ -325,6 +426,88 @@
             </div>
         </aside>
     </main>
+
+    <!-- Personality Creator Modal -->
+    <div class="modal" id="personalityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">✨ Create Custom Personality</div>
+                <button class="modal-close" onclick="closePersonalityCreator()">&times;</button>
+            </div>
+            
+            <form id="personalityForm">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="pName" placeholder="My Custom Bot" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="pDescription" placeholder="A brief description">
+                </div>
+                
+                <div class="form-group">
+                    <label>Specialty</label>
+                    <input type="text" id="pSpecialty" placeholder="What this bot is good at">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Emoji</label>
+                        <input type="text" id="pEmoji" placeholder="🤖" maxlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <select id="pTheme">
+                            <option value="assistant">Assistant</option>
+                            <option value="hacker">Hacker</option>
+                            <option value="chef">Chef</option>
+                            <option value="dj">DJ</option>
+                            <option value="therapist">Therapist</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Voice Speed</label>
+                        <input type="range" id="pVoiceSpeed" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%">
+                        <span id="speedValue">1.0</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Voice Pitch</label>
+                        <input type="range" id="pVoicePitch" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%">
+                        <span id="pitchValue">1.0</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Voice Style</label>
+                    <select id="pVoiceStyle">
+                        <option value="neutral">Neutral</option>
+                        <option value="warm">Warm</option>
+                        <option value="energetic">Energetic</option>
+                        <option value="calm">Calm</option>
+                        <option value="professional">Professional</option>
+                        <option value="funny">Funny</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>System Prompt (How MiBud should behave)</label>
+                    <textarea id="pSystemPrompt" placeholder="You are a helpful assistant that..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Greeting Message</label>
+                    <input type="text" id="pGreeting" placeholder="Hello! I'm...">
+                </div>
+                
+                <button type="submit" class="create-btn">Create Personality</button>
+            </form>
+        </div>
+    </div>
 
     <script>
         let currentPersonality = 'assistant';
@@ -439,6 +622,69 @@
         setInterval(() => {
             document.getElementById('uptime').textContent = new Date().toLocaleTimeString();
         }, 1000);
+        
+        // Personality Creator
+        function openPersonalityCreator() {
+            document.getElementById('personalityModal').classList.add('active');
+        }
+        
+        function closePersonalityCreator() {
+            document.getElementById('personalityModal').classList.remove('active');
+        }
+        
+        // Voice sliders
+        document.getElementById('pVoiceSpeed').addEventListener('input', (e) => {
+            document.getElementById('speedValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('pVoicePitch').addEventListener('input', (e) => {
+            document.getElementById('pitchValue').textContent = e.target.value;
+        });
+        
+        // Form submission
+        document.getElementById('personalityForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                name: document.getElementById('pName').value,
+                description: document.getElementById('pDescription').value,
+                specialty: document.getElementById('pSpecialty').value,
+                emoji: document.getElementById('pEmoji').value || '⭐',
+                theme: document.getElementById('pTheme').value,
+                voice_speed: parseFloat(document.getElementById('pVoiceSpeed').value),
+                voice_pitch: parseFloat(document.getElementById('pVoicePitch').value),
+                voice_style: document.getElementById('pVoiceStyle').value,
+                system_prompt: document.getElementById('pSystemPrompt').value,
+                greeting: document.getElementById('pGreeting').value
+            };
+            
+            try {
+                const response = await fetch('/api/personality/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Personality created successfully!');
+                    closePersonalityCreator();
+                    loadPersonalities();
+                } else {
+                    alert('Failed to create personality: ' + result.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        });
+        
+        // Close modal on outside click
+        document.getElementById('personalityModal').addEventListener('click', (e) => {
+            if (e.target.id === 'personalityModal') {
+                closePersonalityCreator();
+            }
+        });
     </script>
 </body>
 </html>

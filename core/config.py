@@ -86,6 +86,9 @@ class Config:
                 "enable_weather": True,
                 "enable_timers": True,
                 "enable_home_assistant": False,
+                "enable_speaker_recognition": False,
+                "enable_anomaly_detection": False,
+                "enable_multi_device_sync": False,
             },
             # First run tracking
             "first_run": True,

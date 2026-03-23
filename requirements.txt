@@ -38,6 +38,7 @@ piper-tts>=1.2.0
 
 # Network
 requests>=2.31.0
+zeroconf>=0.130.0
 
 # Utilities
 python-dateutil>=2.8.0

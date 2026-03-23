@@ -20,6 +20,8 @@ vosk>=0.3.47
 # Audio
 pyaudio>=0.2.14
 pyalsaaudio>=0.11.0
+numpy>=1.24.0
+scipy>=1.11.0
 
 # Display & Graphics
 Pillow>=10.0.0

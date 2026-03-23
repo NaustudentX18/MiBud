@@ -161,6 +161,24 @@ class AudioManager:
         """Set callback for audio level updates"""
         self._level_callback = callback
         
+    def _get_recorder_device(self):
+        """Get ALSA recorder device for conversation manager"""
+        try:
+            import alsaaudio
+            device = alsaaudio.PCM(
+                alsaaudio.PCM_CAPTURE,
+                alsaaudio.PCM_NORMAL,
+                device=self.config.input_device
+            )
+            device.setrate(self.config.sample_rate)
+            device.setchannels(self.config.channels)
+            device.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+            device.setperiodsize(self.config.chunk_size)
+            return device
+        except Exception as e:
+            log.warning(f"Failed to get recorder device: {e}")
+            return None
+            
     async def cleanup(self):
         """Cleanup audio resources"""
         log.info("🔊 Audio cleanup")

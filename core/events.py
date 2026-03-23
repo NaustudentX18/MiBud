@@ -34,6 +34,7 @@ class EventBus:
     def on(self, event_name: str, callback: Callable):
         """Register event listener"""
         self.listeners[event_name].append(callback)
+        return callback
         
     def off(self, event_name: str, callback: Callable):
         """Unregister event listener"""

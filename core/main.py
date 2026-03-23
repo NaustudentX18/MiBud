@@ -16,7 +16,6 @@ import signal
 import asyncio
 from pathlib import Path
 
-# Add project root to path
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -46,18 +45,24 @@ class MiBudApp:
         self.running = False
         self.workers = []
         
+        self.display = None
+        self.audio = None
+        self.buttons = None
+        self.battery = None
+        self.led = None
+        self.wake_word = None
+        self.conversation = None
+        self.web_server = None
+        
     async def initialize(self):
         """Initialize all components"""
         log.info("🚀 Initializing MiBud...")
         
-        # Load configuration
         self.config.load()
         self.config.print_summary()
         
-        # Initialize state
         await self.state.initialize()
         
-        # Check if first run (setup wizard needed)
         if self.config.is_first_run():
             log.info("📝 First run detected - starting setup wizard")
             await self._run_setup_wizard()
@@ -80,21 +85,20 @@ class MiBudApp:
         """Start normal operation mode"""
         log.info("🎯 Starting MiBud normal mode...")
         
-        # Initialize hardware
         await self._init_hardware()
-        
-        # Initialize AI
         await self._init_ai()
-        
-        # Start web interface
+        await self._init_conversation()
         await self._init_web()
         
-        # Start main event loop
+        self._setup_event_listeners()
+        
         self.running = True
         await self._main_loop()
         
     async def _init_hardware(self):
         """Initialize hardware components"""
+        log.info("🔧 Initializing hardware...")
+        
         try:
             from hardware.display import Display
             from hardware.audio import AudioManager
@@ -102,18 +106,13 @@ class MiBudApp:
             from hardware.battery import BatteryManager
             from hardware.led import LEDManager
             
-            log.info("🔧 Initializing hardware...")
-            
-            # Display
             self.display = Display()
             await self.display.initialize()
             self.display.show_boot_animation()
             
-            # Audio
             self.audio = AudioManager()
             await self.audio.initialize()
             
-            # Buttons
             self.buttons = ButtonManager()
             self.buttons.set_callbacks(
                 on_short_press=self._on_button_press,
@@ -122,11 +121,9 @@ class MiBudApp:
             )
             await self.buttons.initialize()
             
-            # Battery
             self.battery = BatteryManager()
             await self.battery.initialize()
             
-            # LED
             self.led = LEDManager()
             await self.led.initialize()
             
@@ -134,14 +131,26 @@ class MiBudApp:
             
         except Exception as e:
             log.warning(f"Hardware init warning: {e}")
+            self.display = self._create_mock_display()
+            
+    def _create_mock_display(self):
+        """Create a mock display for non-RPi platforms"""
+        class MockDisplay:
+            async def initialize(self): pass
+            def show_boot_animation(self): log.info("📺 [Mock] Boot animation")
+            def update_clock(self): pass
+            def update_battery(self, level): pass
+            def set_state(self, state): log.info(f"📺 [Mock] State: {state}")
+            def show_shutdown(self): log.info("📺 [Mock] Shutdown")
+        return MockDisplay()
             
     async def _init_ai(self):
         """Initialize AI system"""
+        log.info("🧠 Initializing AI system...")
+        
         try:
             from ai.router import AIRouter
             from ai.wakeword import WakeWordDetector
-            
-            log.info("🧠 Initializing AI system...")
             
             self.ai_router = AIRouter(self.config)
             await self.ai_router.initialize()
@@ -149,28 +158,126 @@ class MiBudApp:
             self.wake_word = WakeWordDetector(self.config, self.audio)
             self.wake_word.set_callback(self._on_wake_word)
             await self.wake_word.initialize()
-            await self.wake_word.start()
             
             log.info("✅ AI system initialized")
             
         except Exception as e:
             log.error(f"AI init failed: {e}")
+            self.ai_router = None
+            self.wake_word = None
             
+    async def _init_conversation(self):
+        """Initialize conversation manager"""
+        log.info("💬 Initializing conversation manager...")
+        
+        try:
+            from ai.conversation import ConversationManager
+            
+            self.conversation = ConversationManager(
+                self.config, 
+                self.audio,
+                self.ai_router
+            )
+            await self.conversation.initialize()
+            
+            self.conversation.register_callback("state_changed", self._on_conversation_state)
+            
+            log.info("✅ Conversation manager initialized")
+            
+        except Exception as e:
+            log.error(f"Conversation init failed: {e}")
+            
+    def _setup_event_listeners(self):
+        """Setup event bus listeners"""
+        @self.event_bus.on("button_press")
+        async def handle_button_press(data):
+            button = data.get("button")
+            log.info(f"🔘 Button pressed: {button}")
+            
+            if button == "A":
+                await self._activate_listening()
+            elif button == "B":
+                await self._cycle_personality()
+                
+        @self.event_bus.on("wake_word_detected")
+        async def handle_wake_word(data):
+            word = data.get("word")
+            log.info(f"🔔 Wake word: {word}")
+            await self._activate_listening()
+            
+        @self.event_bus.on("state_changed")
+        async def handle_state_change(data):
+            if self.display:
+                self.display.set_state(data.get("state", "idle"))
+                
     async def _on_wake_word(self, wake_word: str):
         """Handle wake word detection"""
         log.info(f"🔔 Wake word triggered: {wake_word}")
-        self.event_bus.dispatch("wake_word_detected", {"word": wake_word})
+        self.event_bus.emit("wake_word_detected", {"word": wake_word})
+        await self._activate_listening()
+        
+    async def _on_conversation_state(self, state: str):
+        """Handle conversation state changes"""
+        if self.display:
+            self.display.set_state(state)
+        if self.led:
+            await self._update_led_for_state(state)
+            
+    async def _update_led_for_state(self, state: str):
+        """Update LED based on state"""
+        colors = {
+            "idle": "green",
+            "listening": "blue",
+            "thinking": "yellow",
+            "speaking": "purple",
+            "error": "red"
+        }
+        await self.led.set_color(colors.get(state, "green"))
+        
+    async def _activate_listening(self):
+        """Activate listening mode"""
+        if self.state.get_state() == "listening":
+            return
+            
         self.state.set_state("listening")
+        
+        if self.wake_word:
+            await self.wake_word.stop()
+            
+        if self.conversation:
+            await self.conversation.listen_for_command()
+            
+        if self.wake_word:
+            await self.wake_word.start()
+            
+        self.state.set_state("idle")
+        
+    async def _cycle_personality(self):
+        """Cycle to next personality"""
+        if not self.conversation:
+            return
+            
+        from personalities.presets import PERSONALITIES
+        personalities = list(PERSONALITIES.keys())
+        current = self.config.get("personality.current", "assistant")
+        
+        if current in personalities:
+            idx = personalities.index(current)
+            next_idx = (idx + 1) % len(personalities)
+            next_id = personalities[next_idx]
+            
+            await self.conversation.change_personality(next_id)
             
     async def _init_web(self):
         """Initialize web interface"""
+        log.info("🌐 Starting web interface...")
+        
         try:
-            from web.server import WebServer
+            from web.server import run_server
             
-            log.info("🌐 Starting web interface...")
-            
-            self.web_server = WebServer(self.config, self.state)
-            await self.web_server.start()
+            self._web_task = asyncio.create_task(
+                asyncio.to_thread(run_server)
+            )
             
             log.info("✅ Web interface ready at http://mibud.local:5000")
             
@@ -181,20 +288,24 @@ class MiBudApp:
         """Main event loop"""
         log.info("🔄 MiBud running - Press Ctrl+C to stop")
         
+        counter = 0
         while self.running:
             try:
-                # Update battery display
-                if hasattr(self, 'battery'):
-                    battery_level = self.battery.get_level()
-                    self.display.update_battery(battery_level)
+                counter += 1
+                
+                if hasattr(self, 'battery') and self.battery:
+                    level = self.battery.get_level()
+                    if self.display and counter % 10 == 0:
+                        self.display.update_battery(level)
+                        
+                if hasattr(self, 'wake_word') and self.wake_word:
+                    if not self.wake_word.is_listening:
+                        await self.wake_word.start()
+                        
+                if self.display:
+                    self.display.update_clock()
                     
-                # Update clock
-                self.display.update_clock()
-                
-                # Check for events
                 await self.event_bus.process_events()
-                
-                # Sleep
                 await asyncio.sleep(1)
                 
             except asyncio.CancelledError:
@@ -205,12 +316,12 @@ class MiBudApp:
     def _on_button_press(self, button_id: str):
         """Handle button press"""
         log.info(f"🔘 Button pressed: {button_id}")
-        self.event_bus.dispatch("button_press", {"button": button_id})
+        self.event_bus.emit("button_press", {"button": button_id})
         
     def _on_button_long(self, button_id: str):
         """Handle button long press"""
         log.info(f"🔘 Button long press: {button_id}")
-        self.event_bus.dispatch("button_long_press", {"button": button_id})
+        self.event_bus.emit("button_long_press", {"button": button_id})
         
     def _on_button_hold(self, button_id: str):
         """Handle button hold"""
@@ -222,12 +333,14 @@ class MiBudApp:
         self.running = False
         
         try:
-            if hasattr(self, 'wake_word'):
+            if hasattr(self, 'wake_word') and self.wake_word:
                 await self.wake_word.stop()
-            if hasattr(self, 'display'):
+            if hasattr(self, 'conversation') and self.conversation:
+                await self.conversation.stop()
+            if hasattr(self, 'display') and self.display:
                 self.display.show_shutdown()
-            if hasattr(self, 'web_server'):
-                await self.web_server.stop()
+            if hasattr(self, '_web_task') and self._web_task:
+                self._web_task.cancel()
         except Exception as e:
             log.error(f"Shutdown error: {e}")
             
@@ -238,11 +351,11 @@ async def main():
     """Main entry point"""
     app = MiBudApp()
     
-    # Setup signal handlers
     def signal_handler(sig, frame):
         log.info("Received interrupt signal")
-        asyncio.create_task(app.shutdown())
-        
+        if app.running:
+            asyncio.create_task(app.shutdown())
+            
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     

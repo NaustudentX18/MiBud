@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiBud Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg: #1a1a2e;
+            --fg: #e0e0e0;
+            --accent: #00ff64;
+            --secondary: #0096ff;
+            --error: #ff4757;
+            --surface: rgba(255,255,255,0.05);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--surface);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9em;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+        }
+        
+        .card-title {
+            font-size: 0.9em;
+            color: var(--accent);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Chat Area */
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding-right: 10px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: var(--secondary);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.mibud {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .message-time {
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: var(--fg);
+            font-size: 1em;
+        }
+        
+        .input-area button {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .personality-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .personality-btn {
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .personality-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .personality-btn.active {
+            border-color: var(--accent);
+        }
+        
+        .personality-btn .emoji {
+            font-size: 1.5em;
+        }
+        
+        .personality-btn .name {
+            font-size: 0.7em;
+            margin-top: 3px;
+        }
+        
+        .quick-actions {
+            display: grid;
+            gap: 8px;
+        }
+        
+        .quick-btn {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--fg);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        
+        .quick-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent);
+        }
+        
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .toggle {
+            width: 50px;
+            height: 26px;
+            background: #333;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .toggle.active {
+            background: var(--accent);
+        }
+        
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s;
+        }
+        
+        .toggle.active::after {
+            left: 26px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: -1;
+            }
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.3em;
+            color: var(--accent);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--fg);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: var(--fg);
+            font-size: 1em;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .create-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .create-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🤖 MiBud</div>
+        <div class="status-bar">
+            <div class="status-item">🔋 <span id="battery">85%</span></div>
+            <div class="status-item">📶 <span id="wifi">Excellent</span></div>
+            <div class="status-item">🟢 <span id="status">Online</span></div>
+        </div>
+    </header>
+    
+    <main class="main">
+        <div class="chat-area card">
+            <div class="card-title">💬 Conversation</div>
+            
+            <div class="messages" id="messages">
+                <div class="message mibud">
+                    <div>👋 Hi! I'm MiBud, your AI companion. How can I help you today?</div>
+                    <div class="message-time">Just now</div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+        
+        <aside class="sidebar">
+            <div class="card">
+                <div class="card-title">👤 Personality</div>
+                <div class="personality-selector" id="personalitySelector">
+                    <!-- Populated by JS -->
+                </div>
+                <button class="quick-btn" onclick="openPersonalityCreator()" style="margin-top:10px;">
+                    ✨ Create Custom
+                </button>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">⚡ Quick Actions</div>
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="quickAction('weather')">🌤  Weather</button>
+                    <button class="quick-btn" onclick="quickAction('time')">⏰  Time</button>
+                    <button class="quick-btn" onclick="quickAction('joke')">😄  Tell me a joke</button>
+                    <button class="quick-btn" onclick="quickAction('fact')">💡  Random fact</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">⚙️ Settings</div>
+                <div class="settings-list">
+                    <div class="setting-item">
+                        <span>🌐 Online Mode</span>
+                        <div class="toggle active" id="onlineToggle" onclick="toggleSetting('online')"></div>
+                    </div>
+                    <div class="setting-item">
+                        <span>🔊 TTS</span>
+                        <div class="toggle active" id="ttsToggle" onclick="toggleSetting('tts')"></div>
+                    </div>
+                    <div class="setting-item">
+                        <span>🎤 Wake Word</span>
+                        <div class="toggle active" id="wakeWordToggle" onclick="toggleSetting('wakeword')"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📊 System</div>
+                <div style="font-size:0.85em;color:#888;">
+                    <p>Version: <span id="version">0.1.0</span></p>
+                    <p>Uptime: <span id="uptime">0h 0m</span></p>
+                    <p>Memory: <span id="memory">45%</span></p>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Personality Creator Modal -->
+    <div class="modal" id="personalityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">✨ Create Custom Personality</div>
+                <button class="modal-close" onclick="closePersonalityCreator()">&times;</button>
+            </div>
+            
+            <form id="personalityForm">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="pName" placeholder="My Custom Bot" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="pDescription" placeholder="A brief description">
+                </div>
+                
+                <div class="form-group">
+                    <label>Specialty</label>
+                    <input type="text" id="pSpecialty" placeholder="What this bot is good at">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Emoji</label>
+                        <input type="text" id="pEmoji" placeholder="🤖" maxlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <select id="pTheme">
+                            <option value="assistant">Assistant</option>
+                            <option value="hacker">Hacker</option>
+                            <option value="chef">Chef</option>
+                            <option value="dj">DJ</option>
+                            <option value="therapist">Therapist</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Voice Speed</label>
+                        <input type="range" id="pVoiceSpeed" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%">
+                        <span id="speedValue">1.0</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Voice Pitch</label>
+                        <input type="range" id="pVoicePitch" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%">
+                        <span id="pitchValue">1.0</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Voice Style</label>
+                    <select id="pVoiceStyle">
+                        <option value="neutral">Neutral</option>
+                        <option value="warm">Warm</option>
+                        <option value="energetic">Energetic</option>
+                        <option value="calm">Calm</option>
+                        <option value="professional">Professional</option>
+                        <option value="funny">Funny</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>System Prompt (How MiBud should behave)</label>
+                    <textarea id="pSystemPrompt" placeholder="You are a helpful assistant that..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Greeting Message</label>
+                    <input type="text" id="pGreeting" placeholder="Hello! I'm...">
+                </div>
+                
+                <button type="submit" class="create-btn">Create Personality</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentPersonality = 'assistant';
+        let personalities = [];
+        
+        // Load personalities
+        async function loadPersonalities() {
+            try {
+                const response = await fetch('/api/personality/list');
+                personalities = await response.json();
+                
+                const selector = document.getElementById('personalitySelector');
+                selector.innerHTML = personalities.slice(0, 9).map(p => `
+                    <div class="personality-btn ${p.id === currentPersonality ? 'active' : ''}" 
+                         onclick="changePersonality('${p.id}')">
+                        <div class="emoji">${p.emoji}</div>
+                        <div class="name">${p.name}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load personalities:', e);
+            }
+        }
+        
+        function changePersonality(id) {
+            currentPersonality = id;
+            document.querySelectorAll('.personality-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.querySelector('.name').textContent.toLowerCase() === id);
+            });
+            
+            // Save personality
+            fetch('/api/personality/set', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({personality: id})
+            });
+            
+            addMessage('system', `Personality changed to ${id}`);
+        }
+        
+        function addMessage(type, text) {
+            const messages = document.getElementById('messages');
+            const time = new Date().toLocaleTimeString();
+            
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            msg.innerHTML = `
+                <div>${text}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            messages.appendChild(msg);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            addMessage('user', text);
+            input.value = '';
+            
+            // Simulate response (actual AI would be called here)
+            setTimeout(() => {
+                addMessage('mibud', 'This is a demo response. Connect to an AI provider for real responses!');
+            }, 1000);
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function quickAction(action) {
+            const actions = {
+                'weather': 'What\'s the weather like today?',
+                'time': 'What time is it?',
+                'joke': 'Tell me a joke',
+                'fact': 'Tell me an interesting fact'
+            };
+            
+            document.getElementById('messageInput').value = actions[action] || '';
+            sendMessage();
+        }
+        
+        function toggleSetting(setting) {
+            const toggle = document.getElementById(setting + 'Toggle');
+            toggle.classList.toggle('active');
+        }
+        
+        // Load status
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                
+                document.getElementById('battery').textContent = status.battery + '%';
+                document.getElementById('version').textContent = status.version;
+            } catch (e) {
+                console.error('Failed to load status:', e);
+            }
+        }
+        
+        // Initialize
+        loadPersonalities();
+        loadStatus();
+        
+        // Update time
+        setInterval(() => {
+            document.getElementById('uptime').textContent = new Date().toLocaleTimeString();
+        }, 1000);
+        
+        // Personality Creator
+        function openPersonalityCreator() {
+            document.getElementById('personalityModal').classList.add('active');
+        }
+        
+        function closePersonalityCreator() {
+            document.getElementById('personalityModal').classList.remove('active');
+        }
+        
+        // Voice sliders
+        document.getElementById('pVoiceSpeed').addEventListener('input', (e) => {
+            document.getElementById('speedValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('pVoicePitch').addEventListener('input', (e) => {
+            document.getElementById('pitchValue').textContent = e.target.value;
+        });
+        
+        // Form submission
+        document.getElementById('personalityForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                name: document.getElementById('pName').value,
+                description: document.getElementById('pDescription').value,
+                specialty: document.getElementById('pSpecialty').value,
+                emoji: document.getElementById('pEmoji').value || '⭐',
+                theme: document.getElementById('pTheme').value,
+                voice_speed: parseFloat(document.getElementById('pVoiceSpeed').value),
+                voice_pitch: parseFloat(document.getElementById('pVoicePitch').value),
+                voice_style: document.getElementById('pVoiceStyle').value,
+                system_prompt: document.getElementById('pSystemPrompt').value,
+                greeting: document.getElementById('pGreeting').value
+            };
+            
+            try {
+                const response = await fetch('/api/personality/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Personality created successfully!');
+                    closePersonalityCreator();
+                    loadPersonalities();
+                } else {
+                    alert('Failed to create personality: ' + result.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        });
+        
+        // Close modal on outside click
+        document.getElementById('personalityModal').addEventListener('click', (e) => {
+            if (e.target.id === 'personalityModal') {
+                closePersonalityCreator();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -3,487 +3,732 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MiBud Dashboard</title>
+    <title>MiBud Mission CTL</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
         :root {
-            --bg: #1a1a2e;
-            --fg: #e0e0e0;
-            --accent: #00ff64;
-            --secondary: #0096ff;
-            --error: #ff4757;
-            --surface: rgba(255,255,255,0.05);
+            --bg-0: #070b13;
+            --bg-1: #111a2c;
+            --bg-2: #1a2742;
+            --line: rgba(83, 170, 255, 0.32);
+            --line-soft: rgba(83, 170, 255, 0.18);
+            --text: #dbe8ff;
+            --text-dim: #9db3d4;
+            --accent: #59f5b6;
+            --warning: #ffca57;
+            --danger: #ff6b8b;
+            --ok: #4ef59d;
+            --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            --radius: 14px;
         }
-        
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
-            color: var(--fg);
             min-height: 100vh;
+            font-family: Inter, "Segoe UI", Tahoma, sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at 10% 10%, #203259 0%, var(--bg-1) 35%, var(--bg-0) 100%);
         }
-        
-        .header {
-            background: var(--surface);
-            padding: 15px 20px;
+
+        .shell {
+            width: min(1440px, 94vw);
+            margin: 22px auto;
+            display: grid;
+            grid-template-columns: 1.7fr 1fr;
+            gap: 16px;
+        }
+
+        .panel {
+            background: linear-gradient(155deg, rgba(24, 38, 66, 0.92), rgba(8, 15, 29, 0.95));
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 14px;
+        }
+
+        .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line-soft);
         }
-        
-        .logo {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-        
-        .status-bar {
-            display: flex;
-            gap: 20px;
-            font-size: 0.9em;
-        }
-        
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .main {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 20px;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .card {
-            background: var(--surface);
-            border-radius: 16px;
-            padding: 20px;
-        }
-        
-        .card-title {
-            font-size: 0.9em;
-            color: var(--accent);
-            margin-bottom: 15px;
+
+        .panel-title {
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        /* Chat Area */
-        .chat-area {
-            display: flex;
-            flex-direction: column;
-            min-height: 500px;
-        }
-        
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            padding-right: 10px;
-        }
-        
-        .message {
-            margin-bottom: 15px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            max-width: 80%;
-        }
-        
-        .message.user {
-            background: var(--secondary);
-            color: white;
-            margin-left: auto;
-        }
-        
-        .message.mibud {
-            background: var(--surface);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .message-time {
-            font-size: 0.75em;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .input-area {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .input-area input {
-            flex: 1;
-            padding: 12px 16px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: var(--fg);
-            font-size: 1em;
-        }
-        
-        .input-area button {
-            padding: 12px 24px;
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .personality-selector {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-        
-        .personality-btn {
-            background: var(--surface);
-            border: 2px solid transparent;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .personality-btn:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        
-        .personality-btn.active {
-            border-color: var(--accent);
-        }
-        
-        .personality-btn .emoji {
-            font-size: 1.5em;
-        }
-        
-        .personality-btn .name {
-            font-size: 0.7em;
-            margin-top: 3px;
-        }
-        
-        .quick-actions {
-            display: grid;
-            gap: 8px;
-        }
-        
-        .quick-btn {
-            background: var(--surface);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--fg);
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.2s;
-        }
-        
-        .quick-btn:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: var(--accent);
-        }
-        
-        .settings-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .toggle {
-            width: 50px;
-            height: 26px;
-            background: #333;
-            border-radius: 13px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .toggle.active {
-            background: var(--accent);
-        }
-        
-        .toggle::after {
-            content: '';
-            position: absolute;
-            width: 22px;
-            height: 22px;
-            background: white;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: left 0.2s;
-        }
-        
-        .toggle.active::after {
-            left: 26px;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main {
-                grid-template-columns: 1fr;
-            }
-            
-            .sidebar {
-                order: -1;
-            }
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: var(--bg);
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-title {
-            font-size: 1.3em;
+            letter-spacing: 1.5px;
             color: var(--accent);
+            font-weight: 600;
         }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--fg);
-            font-size: 1.5em;
-            cursor: pointer;
+
+        .chip {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: 11px;
+            color: var(--text-dim);
         }
-        
-        .form-group {
-            margin-bottom: 15px;
+
+        .mission-head {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1.1fr 2fr 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 14px;
         }
-        
-        .form-group label {
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .brand small {
+            font-size: 11px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+            color: var(--text-dim);
             display: block;
-            margin-bottom: 5px;
-            color: #888;
-            font-size: 0.9em;
+            margin-top: 2px;
         }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: var(--fg);
-            font-size: 1em;
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(110px, 1fr));
+            gap: 10px;
         }
-        
-        .form-group textarea {
-            min-height: 100px;
-            resize: vertical;
+
+        .status-cell {
+            border: 1px solid var(--line-soft);
+            border-radius: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.16);
         }
-        
-        .form-row {
+
+        .status-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.1px;
+            margin-bottom: 4px;
+        }
+
+        .status-value {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            background: var(--warning);
+        }
+
+        .status-dot.ok { background: var(--ok); }
+        .status-dot.bad { background: var(--danger); }
+
+        .left-col,
+        .right-col {
+            display: grid;
+            gap: 14px;
+            align-content: start;
+        }
+
+        .control-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
-        
-        .create-btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
+
+        .control-card {
+            border: 1px solid var(--line-soft);
+            background: rgba(9, 16, 30, 0.68);
+            border-radius: 10px;
+            padding: 10px;
         }
-        
-        .create-btn:hover {
-            opacity: 0.9;
+
+        .control-label {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .control-value {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        button,
+        select,
+        input,
+        textarea {
+            font: inherit;
+            color: inherit;
+        }
+
+        .btn {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(18, 29, 52, 0.7);
+            color: var(--text);
+            padding: 8px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform 0.12s ease, border-color 0.15s ease;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .btn.primary {
+            background: linear-gradient(120deg, #21b6ff, #52f2bd);
+            color: #071224;
+            font-weight: 700;
+            border: 0;
+        }
+
+        .btn.warn {
+            border-color: rgba(255, 202, 87, 0.55);
+            color: var(--warning);
+        }
+
+        .provider-list {
+            display: grid;
+            gap: 7px;
+            margin-top: 4px;
+            max-height: 252px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+
+        .provider {
+            border: 1px solid var(--line-soft);
+            border-radius: 9px;
+            padding: 9px;
+            background: rgba(8, 16, 30, 0.6);
+            cursor: pointer;
+        }
+
+        .provider.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(89, 245, 182, 0.2) inset;
+        }
+
+        .provider-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .provider-meta {
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-dim);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .kv {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .field label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            border: 1px solid var(--line-soft);
+            border-radius: 8px;
+            background: rgba(8, 15, 27, 0.86);
+            padding: 8px 9px;
+        }
+
+        .toggle-row {
+            display: grid;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .toggle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--line-soft);
+            border-radius: 9px;
+            padding: 8px 10px;
+            background: rgba(10, 17, 30, 0.72);
+            font-size: 13px;
+        }
+
+        .switch {
+            width: 46px;
+            height: 24px;
+            border-radius: 20px;
+            background: #2a3d5c;
+            border: 1px solid var(--line-soft);
+            position: relative;
+            cursor: pointer;
+            transition: background 0.16s;
+        }
+
+        .switch::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #dce7ff;
+            transition: left 0.16s;
+        }
+
+        .switch.on {
+            background: rgba(52, 238, 170, 0.4);
+        }
+
+        .switch.on::after {
+            left: 24px;
+            background: #ffffff;
+        }
+
+        .mini-chart {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .metric {
+            border: 1px solid var(--line-soft);
+            border-radius: 9px;
+            padding: 8px;
+            text-align: center;
+            background: rgba(8, 14, 25, 0.8);
+        }
+
+        .metric-name {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .alerts {
+            margin-top: 8px;
+            max-height: 170px;
+            overflow: auto;
+            display: grid;
+            gap: 7px;
+            padding-right: 4px;
+        }
+
+        .alert {
+            border: 1px solid rgba(255, 107, 139, 0.36);
+            background: rgba(255, 107, 139, 0.12);
+            border-radius: 9px;
+            padding: 7px 8px;
+            font-size: 12px;
+            color: #ffd7e2;
+        }
+
+        .alert small {
+            color: #ffc2d4;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .personality-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+            margin-top: 6px;
+        }
+
+        .personality {
+            border: 1px solid var(--line-soft);
+            border-radius: 9px;
+            background: rgba(8, 15, 27, 0.7);
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .personality.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(89, 245, 182, 0.18) inset;
+        }
+
+        .message-stack {
+            max-height: 220px;
+            overflow: auto;
+            display: grid;
+            gap: 8px;
+            margin-top: 8px;
+            padding-right: 4px;
+        }
+
+        .message {
+            border: 1px solid var(--line-soft);
+            border-radius: 9px;
+            padding: 8px;
+            font-size: 13px;
+            background: rgba(7, 13, 25, 0.76);
+        }
+
+        .message.user {
+            border-color: rgba(83, 170, 255, 0.48);
+        }
+
+        .message.system {
+            border-color: rgba(89, 245, 182, 0.35);
+            color: #b3ffd8;
+        }
+
+        .compose {
+            margin-top: 8px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+
+        .compose input {
+            border: 1px solid var(--line-soft);
+            border-radius: 8px;
+            background: rgba(8, 14, 25, 0.88);
+            padding: 8px 9px;
+        }
+
+        .notice {
+            margin-top: 8px;
+            min-height: 18px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .notice.ok {
+            color: #7dffc8;
+        }
+
+        .notice.err {
+            color: #ff98af;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 999;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: min(560px, 100%);
+            border: 1px solid var(--line);
+            background: linear-gradient(160deg, rgba(22, 35, 62, 0.98), rgba(10, 17, 31, 0.98));
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        .modal-close {
+            border: 1px solid var(--line-soft);
+            background: rgba(10, 16, 29, 0.8);
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1120px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+
+            .mission-head {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo">🤖 MiBud</div>
-        <div class="status-bar">
-            <div class="status-item">🔋 <span id="battery">85%</span></div>
-            <div class="status-item">📶 <span id="wifi">Excellent</span></div>
-            <div class="status-item">🟢 <span id="status">Online</span></div>
-        </div>
-    </header>
-    
-    <main class="main">
-        <div class="chat-area card">
-            <div class="card-title">💬 Conversation</div>
-            
-            <div class="messages" id="messages">
-                <div class="message mibud">
-                    <div>👋 Hi! I'm MiBud, your AI companion. How can I help you today?</div>
-                    <div class="message-time">Just now</div>
+    <main class="shell">
+        <section class="panel mission-head">
+            <div class="brand">
+                <div>🤖 MiBud</div>
+                <div>
+                    Mission CTL
+                    <small>Command + Telemetry + Logic</small>
                 </div>
             </div>
-            
-            <div class="input-area">
-                <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
-                <button onclick="sendMessage()">Send</button>
-            </div>
-        </div>
-        
-        <aside class="sidebar">
-            <div class="card">
-                <div class="card-title">👤 Personality</div>
-                <div class="personality-selector" id="personalitySelector">
-                    <!-- Populated by JS -->
+            <div class="status-grid">
+                <div class="status-cell">
+                    <div class="status-label">System</div>
+                    <div class="status-value"><span class="status-dot" id="dotSystem"></span><span id="statusSystem">unknown</span></div>
                 </div>
-                <button class="quick-btn" onclick="openPersonalityCreator()" style="margin-top:10px;">
-                    ✨ Create Custom
-                </button>
-            </div>
-            
-            <div class="card">
-                <div class="card-title">⚡ Quick Actions</div>
-                <div class="quick-actions">
-                    <button class="quick-btn" onclick="quickAction('weather')">🌤  Weather</button>
-                    <button class="quick-btn" onclick="quickAction('time')">⏰  Time</button>
-                    <button class="quick-btn" onclick="quickAction('joke')">😄  Tell me a joke</button>
-                    <button class="quick-btn" onclick="quickAction('fact')">💡  Random fact</button>
+                <div class="status-cell">
+                    <div class="status-label">Network</div>
+                    <div class="status-value"><span class="status-dot" id="dotNet"></span><span id="statusNetwork">offline</span></div>
+                </div>
+                <div class="status-cell">
+                    <div class="status-label">Provider</div>
+                    <div class="status-value" id="statusProvider">-</div>
+                </div>
+                <div class="status-cell">
+                    <div class="status-label">Model</div>
+                    <div class="status-value" id="statusModel">-</div>
                 </div>
             </div>
-            
-            <div class="card">
-                <div class="card-title">⚙️ Settings</div>
-                <div class="settings-list">
-                    <div class="setting-item">
-                        <span>🌐 Online Mode</span>
-                        <div class="toggle active" id="onlineToggle" onclick="toggleSetting('online')"></div>
+            <div style="text-align:right;">
+                <div class="chip" id="chipVersion">v0.1.0</div>
+                <div class="kv" style="margin-top:8px;">Battery <span id="statusBattery">n/a</span></div>
+                <div class="kv">Uptime <span id="statusUptime">n/a</span></div>
+            </div>
+        </section>
+
+        <section class="left-col">
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">AI Routing Deck</div>
+                    <div class="chip" id="providerCountChip">0 Providers</div>
+                </div>
+                <div class="provider-list" id="providerList"></div>
+                <div class="field">
+                    <label for="modelSelect">Model Route</label>
+                    <select id="modelSelect"></select>
+                </div>
+                <div class="controls-row">
+                    <button class="btn primary" id="applyProviderBtn">Apply Provider + Model</button>
+                    <button class="btn" id="refreshProvidersBtn">Refresh Catalog</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Mission Settings</div>
+                    <div class="chip">Live Config</div>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-item">
+                        <span>Online Mode</span>
+                        <button class="switch" data-setting="mission.online_mode" id="toggleOnlineMode"></button>
                     </div>
-                    <div class="setting-item">
-                        <span>🔊 TTS</span>
-                        <div class="toggle active" id="ttsToggle" onclick="toggleSetting('tts')"></div>
+                    <div class="toggle-item">
+                        <span>Text to Speech</span>
+                        <button class="switch" data-setting="features.enable_tts" id="toggleTTS"></button>
                     </div>
-                    <div class="setting-item">
-                        <span>🎤 Wake Word</span>
-                        <div class="toggle active" id="wakeWordToggle" onclick="toggleSetting('wakeword')"></div>
+                    <div class="toggle-item">
+                        <span>Speech to Text</span>
+                        <button class="switch" data-setting="features.enable_stt" id="toggleSTT"></button>
+                    </div>
+                    <div class="toggle-item">
+                        <span>Wake Word</span>
+                        <button class="switch" data-setting="wake_word.enabled" id="toggleWakeWord"></button>
+                    </div>
+                    <div class="toggle-item">
+                        <span>Weather Skill</span>
+                        <button class="switch" data-setting="features.enable_weather" id="toggleWeather"></button>
+                    </div>
+                    <div class="toggle-item">
+                        <span>Anomaly Detection</span>
+                        <button class="switch" data-setting="features.enable_anomaly_detection" id="toggleAnomaly"></button>
+                    </div>
+                    <div class="toggle-item">
+                        <span>Camera Feature</span>
+                        <button class="switch" data-setting="features.enable_camera" id="toggleCamera"></button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-title">📊 System</div>
-                <div style="font-size:0.85em;color:#888;">
-                    <p>Version: <span id="version">0.1.0</span></p>
-                    <p>Uptime: <span id="uptime">0h 0m</span></p>
-                    <p>Memory: <span id="memory">45%</span></p>
+                <div class="field">
+                    <label for="ollamaUrlInput">Ollama URL</label>
+                    <input type="text" id="ollamaUrlInput" placeholder="http://localhost:11434">
                 </div>
-            </div>
+                <div class="controls-row">
+                    <button class="btn" id="saveOllamaUrlBtn">Save Ollama URL</button>
+                </div>
+                <div class="notice" id="settingsNotice"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Personality Matrix</div>
+                    <button class="btn" id="openCreatePersonalityBtn">Create</button>
+                </div>
+                <div class="personality-grid" id="personalityGrid"></div>
+            </section>
+        </section>
+
+        <aside class="right-col">
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Telemetry</div>
+                    <div class="chip">Auto Refresh</div>
+                </div>
+                <div class="mini-chart">
+                    <div class="metric">
+                        <div class="metric-name">CPU</div>
+                        <div class="metric-value" id="metricCpu">0%</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-name">Memory</div>
+                        <div class="metric-value" id="metricMemory">0%</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-name">Disk</div>
+                        <div class="metric-value" id="metricDisk">0%</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Mission Alerts</div>
+                    <button class="btn warn" id="clearAlertsBtn">Clear</button>
+                </div>
+                <div class="alerts" id="alertsList"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Ops Console</div>
+                    <div class="chip">Demo Chat</div>
+                </div>
+                <div class="controls-row">
+                    <button class="btn" data-quick="status">System Status</button>
+                    <button class="btn" data-quick="joke">Tell a Joke</button>
+                    <button class="btn" data-quick="tip">Safety Tip</button>
+                </div>
+                <div class="message-stack" id="messageStack">
+                    <div class="message system">Mission CTL initialized. Select a provider and deploy a model route.</div>
+                </div>
+                <div class="compose">
+                    <input type="text" id="composeInput" placeholder="Type a command...">
+                    <button class="btn primary" id="sendBtn">Send</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Endpoint Health</div>
+                    <div class="chip" id="keyHealthChip">API Keys</div>
+                </div>
+                <div class="control-grid" id="keyHealthGrid"></div>
+            </section>
         </aside>
     </main>
 
-    <!-- Personality Creator Modal -->
     <div class="modal" id="personalityModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">✨ Create Custom Personality</div>
-                <button class="modal-close" onclick="closePersonalityCreator()">&times;</button>
+        <div class="modal-card">
+            <div class="modal-head">
+                <div class="modal-title">Create Custom Personality</div>
+                <button class="modal-close" id="closeModalBtn">×</button>
             </div>
-            
             <form id="personalityForm">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="pName" placeholder="My Custom Bot" required>
+                <div class="field">
+                    <label for="pName">Name</label>
+                    <input id="pName" required placeholder="Mission Strategist">
                 </div>
-                
-                <div class="form-group">
-                    <label>Description</label>
-                    <input type="text" id="pDescription" placeholder="A brief description">
+                <div class="field">
+                    <label for="pDescription">Description</label>
+                    <input id="pDescription" placeholder="Brief role description">
                 </div>
-                
-                <div class="form-group">
-                    <label>Specialty</label>
-                    <input type="text" id="pSpecialty" placeholder="What this bot is good at">
+                <div class="field">
+                    <label for="pSpecialty">Specialty</label>
+                    <input id="pSpecialty" placeholder="What this profile excels at">
                 </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Emoji</label>
-                        <input type="text" id="pEmoji" placeholder="🤖" maxlength="2">
+                <div class="control-grid">
+                    <div class="field">
+                        <label for="pEmoji">Emoji</label>
+                        <input id="pEmoji" maxlength="2" placeholder="🛰️">
                     </div>
-                    <div class="form-group">
-                        <label>Theme</label>
+                    <div class="field">
+                        <label for="pTheme">Theme</label>
                         <select id="pTheme">
                             <option value="assistant">Assistant</option>
                             <option value="hacker">Hacker</option>
                             <option value="chef">Chef</option>
-                            <option value="dj">DJ</option>
+                            <option value="mentor">Mentor</option>
                             <option value="therapist">Therapist</option>
                             <option value="custom">Custom</option>
                         </select>
                     </div>
                 </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Voice Speed</label>
-                        <input type="range" id="pVoiceSpeed" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%">
-                        <span id="speedValue">1.0</span>
+                <div class="control-grid">
+                    <div class="field">
+                        <label for="pVoiceSpeed">Voice Speed</label>
+                        <input id="pVoiceSpeed" type="number" min="0.5" max="1.5" step="0.1" value="1.0">
                     </div>
-                    <div class="form-group">
-                        <label>Voice Pitch</label>
-                        <input type="range" id="pVoicePitch" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%">
-                        <span id="pitchValue">1.0</span>
+                    <div class="field">
+                        <label for="pVoicePitch">Voice Pitch</label>
+                        <input id="pVoicePitch" type="number" min="0.5" max="1.5" step="0.1" value="1.0">
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label>Voice Style</label>
+                <div class="field">
+                    <label for="pVoiceStyle">Voice Style</label>
                     <select id="pVoiceStyle">
                         <option value="neutral">Neutral</option>
                         <option value="warm">Warm</option>
@@ -493,198 +738,456 @@
                         <option value="funny">Funny</option>
                     </select>
                 </div>
-                
-                <div class="form-group">
-                    <label>System Prompt (How MiBud should behave)</label>
-                    <textarea id="pSystemPrompt" placeholder="You are a helpful assistant that..."></textarea>
+                <div class="field">
+                    <label for="pSystemPrompt">System Prompt</label>
+                    <textarea id="pSystemPrompt" rows="4" placeholder="Behavior instructions..."></textarea>
                 </div>
-                
-                <div class="form-group">
-                    <label>Greeting Message</label>
-                    <input type="text" id="pGreeting" placeholder="Hello! I'm...">
+                <div class="field">
+                    <label for="pGreeting">Greeting</label>
+                    <input id="pGreeting" placeholder="Welcome to Mission CTL.">
                 </div>
-                
-                <button type="submit" class="create-btn">Create Personality</button>
+                <div class="controls-row">
+                    <button class="btn primary" type="submit">Create Personality</button>
+                </div>
             </form>
         </div>
     </div>
 
     <script>
-        let currentPersonality = 'assistant';
-        let personalities = [];
-        
-        // Load personalities
-        async function loadPersonalities() {
+        const state = {
+            selectedProvider: null,
+            selectedModel: null,
+            providers: [],
+            settings: null,
+            personalities: [],
+            status: null
+        };
+
+        function fmtUptime(seconds) {
+            if (typeof seconds !== "number" || seconds <= 0) {
+                return "n/a";
+            }
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+        }
+
+        function pushMessage(type, text) {
+            const stack = document.getElementById("messageStack");
+            const el = document.createElement("div");
+            el.className = `message ${type}`;
+            el.textContent = text;
+            stack.appendChild(el);
+            stack.scrollTop = stack.scrollHeight;
+        }
+
+        function setNotice(text, type = "") {
+            const el = document.getElementById("settingsNotice");
+            el.className = `notice ${type}`.trim();
+            el.textContent = text;
+        }
+
+        async function apiJson(url, options = {}) {
+            const response = await fetch(url, {
+                headers: { "Content-Type": "application/json" },
+                ...options
+            });
+            let payload = {};
             try {
-                const response = await fetch('/api/personality/list');
-                personalities = await response.json();
-                
-                const selector = document.getElementById('personalitySelector');
-                selector.innerHTML = personalities.slice(0, 9).map(p => `
-                    <div class="personality-btn ${p.id === currentPersonality ? 'active' : ''}" 
-                         onclick="changePersonality('${p.id}')">
-                        <div class="emoji">${p.emoji}</div>
-                        <div class="name">${p.name}</div>
+                payload = await response.json();
+            } catch (_err) {
+                payload = {};
+            }
+            if (!response.ok || payload.success === false) {
+                throw new Error(payload.error || `Request failed: ${response.status}`);
+            }
+            return payload;
+        }
+
+        function renderStatus(status) {
+            state.status = status;
+            const systemOk = status.status === "running";
+            const networkOk = Boolean(status.online);
+            document.getElementById("statusSystem").textContent = systemOk ? "running" : "offline";
+            document.getElementById("statusNetwork").textContent = networkOk ? "online" : "offline";
+            document.getElementById("dotSystem").className = `status-dot ${systemOk ? "ok" : "bad"}`;
+            document.getElementById("dotNet").className = `status-dot ${networkOk ? "ok" : "bad"}`;
+            document.getElementById("statusProvider").textContent = status.provider || "-";
+            document.getElementById("statusModel").textContent = (status.provider === "ollama" ? status.offline_model : status.model) || "-";
+            document.getElementById("statusBattery").textContent = typeof status.battery === "number" ? `${status.battery}%` : "n/a";
+            document.getElementById("statusUptime").textContent = fmtUptime(status.uptime_seconds);
+            document.getElementById("chipVersion").textContent = `v${status.version || "0.1.0"}`;
+            document.getElementById("metricCpu").textContent = typeof status.cpu_percent === "number" ? `${status.cpu_percent.toFixed(0)}%` : "n/a";
+            document.getElementById("metricMemory").textContent = typeof status.memory_percent === "number" ? `${status.memory_percent.toFixed(0)}%` : "n/a";
+            document.getElementById("metricDisk").textContent = typeof status.disk_percent === "number" ? `${status.disk_percent.toFixed(0)}%` : "n/a";
+        }
+
+        function renderKeyHealth(keys = {}) {
+            const grid = document.getElementById("keyHealthGrid");
+            grid.innerHTML = "";
+            const entries = Object.entries(keys);
+            if (!entries.length) {
+                grid.innerHTML = "<div class='kv'>No key data available.</div>";
+                return;
+            }
+            entries.forEach(([provider, configured]) => {
+                const item = document.createElement("div");
+                item.className = "control-card";
+                item.innerHTML = `
+                    <div class="control-label">${provider}</div>
+                    <div class="control-value">${configured ? "Configured" : "Missing"}</div>
+                `;
+                grid.appendChild(item);
+            });
+        }
+
+        function providerModelForSettings(settings) {
+            if (!settings) return null;
+            return settings.current_provider === "ollama" ? settings.offline_model : settings.current_model;
+        }
+
+        function renderProviders() {
+            const list = document.getElementById("providerList");
+            list.innerHTML = "";
+            document.getElementById("providerCountChip").textContent = `${state.providers.length} Providers`;
+            state.providers.forEach((provider) => {
+                const card = document.createElement("div");
+                card.className = `provider ${provider.id === state.selectedProvider ? "active" : ""}`;
+                const enabledTxt = provider.requires_key ? (provider.enabled ? "key ok" : "missing key") : "no key needed";
+                const liveTxt = provider.available ? "available" : "unreachable";
+                card.innerHTML = `
+                    <div class="provider-name">${provider.name}</div>
+                    <div class="provider-meta">
+                        <span>${enabledTxt}</span>
+                        <span>${liveTxt}</span>
+                        <span>${provider.models.length} models</span>
                     </div>
-                `).join('');
-            } catch (e) {
-                console.error('Failed to load personalities:', e);
-            }
-        }
-        
-        function changePersonality(id) {
-            currentPersonality = id;
-            document.querySelectorAll('.personality-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.querySelector('.name').textContent.toLowerCase() === id);
-            });
-            
-            // Save personality
-            fetch('/api/personality/set', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({personality: id})
-            });
-            
-            addMessage('system', `Personality changed to ${id}`);
-        }
-        
-        function addMessage(type, text) {
-            const messages = document.getElementById('messages');
-            const time = new Date().toLocaleTimeString();
-            
-            const msg = document.createElement('div');
-            msg.className = `message ${type}`;
-            msg.innerHTML = `
-                <div>${text}</div>
-                <div class="message-time">${time}</div>
-            `;
-            
-            messages.appendChild(msg);
-            messages.scrollTop = messages.scrollHeight;
-        }
-        
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            
-            if (!text) return;
-            
-            addMessage('user', text);
-            input.value = '';
-            
-            // Simulate response (actual AI would be called here)
-            setTimeout(() => {
-                addMessage('mibud', 'This is a demo response. Connect to an AI provider for real responses!');
-            }, 1000);
-        }
-        
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-        
-        function quickAction(action) {
-            const actions = {
-                'weather': 'What\'s the weather like today?',
-                'time': 'What time is it?',
-                'joke': 'Tell me a joke',
-                'fact': 'Tell me an interesting fact'
-            };
-            
-            document.getElementById('messageInput').value = actions[action] || '';
-            sendMessage();
-        }
-        
-        function toggleSetting(setting) {
-            const toggle = document.getElementById(setting + 'Toggle');
-            toggle.classList.toggle('active');
-        }
-        
-        // Load status
-        async function loadStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const status = await response.json();
-                
-                document.getElementById('battery').textContent = status.battery + '%';
-                document.getElementById('version').textContent = status.version;
-            } catch (e) {
-                console.error('Failed to load status:', e);
-            }
-        }
-        
-        // Initialize
-        loadPersonalities();
-        loadStatus();
-        
-        // Update time
-        setInterval(() => {
-            document.getElementById('uptime').textContent = new Date().toLocaleTimeString();
-        }, 1000);
-        
-        // Personality Creator
-        function openPersonalityCreator() {
-            document.getElementById('personalityModal').classList.add('active');
-        }
-        
-        function closePersonalityCreator() {
-            document.getElementById('personalityModal').classList.remove('active');
-        }
-        
-        // Voice sliders
-        document.getElementById('pVoiceSpeed').addEventListener('input', (e) => {
-            document.getElementById('speedValue').textContent = e.target.value;
-        });
-        
-        document.getElementById('pVoicePitch').addEventListener('input', (e) => {
-            document.getElementById('pitchValue').textContent = e.target.value;
-        });
-        
-        // Form submission
-        document.getElementById('personalityForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const data = {
-                name: document.getElementById('pName').value,
-                description: document.getElementById('pDescription').value,
-                specialty: document.getElementById('pSpecialty').value,
-                emoji: document.getElementById('pEmoji').value || '⭐',
-                theme: document.getElementById('pTheme').value,
-                voice_speed: parseFloat(document.getElementById('pVoiceSpeed').value),
-                voice_pitch: parseFloat(document.getElementById('pVoicePitch').value),
-                voice_style: document.getElementById('pVoiceStyle').value,
-                system_prompt: document.getElementById('pSystemPrompt').value,
-                greeting: document.getElementById('pGreeting').value
-            };
-            
-            try {
-                const response = await fetch('/api/personality/create', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
+                `;
+                card.addEventListener("click", () => {
+                    state.selectedProvider = provider.id;
+                    if (provider.models.length > 0) {
+                        state.selectedModel = provider.models.includes(state.selectedModel)
+                            ? state.selectedModel
+                            : provider.models[0];
+                    } else {
+                        state.selectedModel = "";
+                    }
+                    renderProviders();
+                    renderModelSelect();
                 });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Personality created successfully!');
-                    closePersonalityCreator();
-                    loadPersonalities();
-                } else {
-                    alert('Failed to create personality: ' + result.error);
+                list.appendChild(card);
+            });
+        }
+
+        function renderModelSelect() {
+            const select = document.getElementById("modelSelect");
+            const provider = state.providers.find((p) => p.id === state.selectedProvider);
+            select.innerHTML = "";
+            if (!provider) {
+                select.innerHTML = "<option value=''>No provider selected</option>";
+                return;
+            }
+            const models = provider.models || [];
+            if (!models.length) {
+                select.innerHTML = "<option value=''>No models detected</option>";
+                state.selectedModel = "";
+                return;
+            }
+            models.forEach((model) => {
+                const option = document.createElement("option");
+                option.value = model;
+                option.textContent = model;
+                option.selected = model === state.selectedModel;
+                select.appendChild(option);
+            });
+            if (!state.selectedModel) {
+                state.selectedModel = models[0];
+                select.value = models[0];
+            }
+        }
+
+        function setSwitch(id, on) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle("on", Boolean(on));
+        }
+
+        function renderSettings(settings) {
+            state.settings = settings;
+            document.getElementById("ollamaUrlInput").value = settings.ollama_url || "http://localhost:11434";
+            setSwitch("toggleOnlineMode", settings.online_mode);
+            setSwitch("toggleTTS", settings.features.enable_tts);
+            setSwitch("toggleSTT", settings.features.enable_stt);
+            setSwitch("toggleWakeWord", settings.wake_word_enabled);
+            setSwitch("toggleWeather", settings.features.enable_weather);
+            setSwitch("toggleAnomaly", settings.features.enable_anomaly_detection);
+            setSwitch("toggleCamera", settings.features.enable_camera);
+        }
+
+        function renderPersonalities() {
+            const grid = document.getElementById("personalityGrid");
+            grid.innerHTML = "";
+            const current = state.settings ? state.settings.personality_current : "";
+            const subset = state.personalities.slice(0, 9);
+            subset.forEach((personality) => {
+                const cell = document.createElement("div");
+                cell.className = `personality ${personality.id === current ? "active" : ""}`;
+                cell.innerHTML = `
+                    <div style="font-size:18px;">${personality.emoji || "🤖"}</div>
+                    <div style="font-weight:700;margin-top:2px;">${personality.name}</div>
+                    <div class="kv">${personality.specialty || "General"}</div>
+                `;
+                cell.addEventListener("click", () => setPersonality(personality.id, personality.name));
+                grid.appendChild(cell);
+            });
+        }
+
+        function renderAlerts(alerts = []) {
+            const list = document.getElementById("alertsList");
+            list.innerHTML = "";
+            if (!alerts.length) {
+                list.innerHTML = "<div class='kv'>No alerts in history.</div>";
+                return;
+            }
+            alerts.slice(-10).reverse().forEach((alert) => {
+                const row = document.createElement("div");
+                row.className = "alert";
+                row.innerHTML = `
+                    <div>${alert.message || alert.type || "Alert event"}</div>
+                    <small>${alert.timestamp || ""}</small>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        async function refreshBootstrap() {
+            const payload = await apiJson("/api/mission/bootstrap");
+            state.providers = payload.providers || [];
+            state.settings = payload.settings || {};
+            state.personalities = payload.personalities || [];
+            state.selectedProvider = state.settings.current_provider || "openrouter";
+            state.selectedModel = providerModelForSettings(state.settings);
+            renderStatus(payload.status || {});
+            renderSettings(state.settings);
+            renderProviders();
+            renderModelSelect();
+            renderPersonalities();
+            renderKeyHealth(payload.keys || {});
+        }
+
+        async function refreshStatusAndAlerts() {
+            try {
+                const [status, alerts] = await Promise.all([
+                    apiJson("/api/status"),
+                    apiJson("/api/alerts")
+                ]);
+                renderStatus(status);
+                renderAlerts(alerts.alerts || []);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function setPersonality(personalityId, personalityName = personalityId) {
+            try {
+                await apiJson("/api/personality/set", {
+                    method: "POST",
+                    body: JSON.stringify({ personality: personalityId })
+                });
+                if (state.settings) {
+                    state.settings.personality_current = personalityId;
                 }
-            } catch (e) {
-                alert('Error: ' + e);
+                renderPersonalities();
+                pushMessage("system", `Personality switched to ${personalityName}.`);
+            } catch (error) {
+                setNotice(error.message, "err");
             }
-        });
-        
-        // Close modal on outside click
-        document.getElementById('personalityModal').addEventListener('click', (e) => {
-            if (e.target.id === 'personalityModal') {
-                closePersonalityCreator();
+        }
+
+        async function applyProviderModel() {
+            try {
+                const select = document.getElementById("modelSelect");
+                const model = select.value || state.selectedModel || "";
+                const payload = await apiJson("/api/mission/provider", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        provider: state.selectedProvider,
+                        model
+                    })
+                });
+                state.settings = payload.settings;
+                state.providers = payload.providers;
+                state.selectedProvider = payload.settings.current_provider;
+                state.selectedModel = providerModelForSettings(payload.settings);
+                renderSettings(payload.settings);
+                renderProviders();
+                renderModelSelect();
+                setNotice("Provider route updated.", "ok");
+                await refreshStatusAndAlerts();
+                pushMessage("system", `Routing updated to ${state.selectedProvider} (${state.selectedModel || "default"}).`);
+            } catch (error) {
+                setNotice(error.message, "err");
             }
-        });
+        }
+
+        async function toggleMissionSetting(path, el) {
+            const nextState = !el.classList.contains("on");
+            try {
+                const payload = await apiJson("/api/mission/settings", {
+                    method: "POST",
+                    body: JSON.stringify({ path, value: nextState })
+                });
+                state.settings = payload.settings;
+                state.providers = payload.providers;
+                state.selectedProvider = payload.settings.current_provider;
+                state.selectedModel = providerModelForSettings(payload.settings);
+                renderSettings(payload.settings);
+                renderProviders();
+                renderModelSelect();
+                await refreshStatusAndAlerts();
+                setNotice(`Updated ${path}.`, "ok");
+            } catch (error) {
+                setNotice(error.message, "err");
+            }
+        }
+
+        async function saveOllamaUrl() {
+            const url = document.getElementById("ollamaUrlInput").value.trim();
+            if (!url) {
+                setNotice("Ollama URL cannot be empty.", "err");
+                return;
+            }
+            try {
+                const payload = await apiJson("/api/mission/settings", {
+                    method: "POST",
+                    body: JSON.stringify({ path: "ai.ollama_url", value: url })
+                });
+                state.settings = payload.settings;
+                state.providers = payload.providers;
+                renderSettings(payload.settings);
+                renderProviders();
+                renderModelSelect();
+                setNotice("Ollama URL saved and catalog refreshed.", "ok");
+            } catch (error) {
+                setNotice(error.message, "err");
+            }
+        }
+
+        async function clearAlerts() {
+            try {
+                await apiJson("/api/alerts/clear", { method: "POST" });
+                renderAlerts([]);
+                setNotice("Alert history cleared.", "ok");
+            } catch (error) {
+                setNotice(error.message, "err");
+            }
+        }
+
+        function initOpsConsole() {
+            const quickPrompts = {
+                status: "Show current mission status summary.",
+                joke: "Tell an engineer-friendly joke.",
+                tip: "Give one safety and reliability tip for Raspberry Pi deployments."
+            };
+            document.querySelectorAll("[data-quick]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const text = quickPrompts[btn.dataset.quick] || "Quick action";
+                    document.getElementById("composeInput").value = text;
+                    sendCompose();
+                });
+            });
+            document.getElementById("sendBtn").addEventListener("click", sendCompose);
+            document.getElementById("composeInput").addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    sendCompose();
+                }
+            });
+        }
+
+        function sendCompose() {
+            const input = document.getElementById("composeInput");
+            const text = input.value.trim();
+            if (!text) return;
+            pushMessage("user", text);
+            input.value = "";
+            window.setTimeout(() => {
+                pushMessage(
+                    "system",
+                    "Mission CTL demo response: connect this panel to core conversation APIs for production chat."
+                );
+            }, 450);
+        }
+
+        function initCreatePersonalityModal() {
+            const modal = document.getElementById("personalityModal");
+            document.getElementById("openCreatePersonalityBtn").addEventListener("click", () => {
+                modal.classList.add("active");
+            });
+            document.getElementById("closeModalBtn").addEventListener("click", () => {
+                modal.classList.remove("active");
+            });
+            modal.addEventListener("click", (event) => {
+                if (event.target === modal) {
+                    modal.classList.remove("active");
+                }
+            });
+            document.getElementById("personalityForm").addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const payload = {
+                    name: document.getElementById("pName").value,
+                    description: document.getElementById("pDescription").value,
+                    specialty: document.getElementById("pSpecialty").value,
+                    emoji: document.getElementById("pEmoji").value || "⭐",
+                    theme: document.getElementById("pTheme").value,
+                    voice_speed: parseFloat(document.getElementById("pVoiceSpeed").value || "1.0"),
+                    voice_pitch: parseFloat(document.getElementById("pVoicePitch").value || "1.0"),
+                    voice_style: document.getElementById("pVoiceStyle").value,
+                    system_prompt: document.getElementById("pSystemPrompt").value,
+                    greeting: document.getElementById("pGreeting").value
+                };
+                try {
+                    await apiJson("/api/personality/create", {
+                        method: "POST",
+                        body: JSON.stringify(payload)
+                    });
+                    modal.classList.remove("active");
+                    await refreshBootstrap();
+                    setNotice("Custom personality created.", "ok");
+                } catch (error) {
+                    setNotice(error.message, "err");
+                }
+            });
+        }
+
+        function initMissionControls() {
+            document.getElementById("modelSelect").addEventListener("change", (event) => {
+                state.selectedModel = event.target.value;
+            });
+            document.getElementById("applyProviderBtn").addEventListener("click", applyProviderModel);
+            document.getElementById("refreshProvidersBtn").addEventListener("click", refreshBootstrap);
+            document.getElementById("saveOllamaUrlBtn").addEventListener("click", saveOllamaUrl);
+            document.getElementById("clearAlertsBtn").addEventListener("click", clearAlerts);
+            document.querySelectorAll(".switch[data-setting]").forEach((sw) => {
+                sw.addEventListener("click", () => toggleMissionSetting(sw.dataset.setting, sw));
+            });
+        }
+
+        async function boot() {
+            try {
+                await refreshBootstrap();
+                await refreshStatusAndAlerts();
+                initMissionControls();
+                initOpsConsole();
+                initCreatePersonalityModal();
+                setNotice("Mission CTL ready.", "ok");
+                window.setInterval(refreshStatusAndAlerts, 6000);
+            } catch (error) {
+                setNotice(`Bootstrap failed: ${error.message}`, "err");
+                console.error(error);
+            }
+        }
+
+        boot();
     </script>
 </body>
 </html>

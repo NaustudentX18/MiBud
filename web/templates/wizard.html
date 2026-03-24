@@ -218,6 +218,8 @@
         let currentStep = 1;
         const totalSteps = 8;
         let config = {
+            provider: 'openrouter',
+            model: 'google/gemini-2.0-flash-lite:free',
             personality: 'assistant',
             apiKeys: {}
         };
@@ -339,39 +341,79 @@
                 <p style="text-align:center;margin-bottom:20px;">Choose your AI backend</p>
                 
                 <div style="display:grid;gap:10px;">
-                    <label class="personality-card" onclick="selectProvider('openrouter')">
+                    <label class="personality-card ${config.provider === 'openrouter' ? 'selected' : ''}" onclick="selectProvider('openrouter')">
                         <div class="personality-emoji">🌐</div>
                         <div class="personality-name">OpenRouter (Free)</div>
                         <div class="personality-specialty">Gemini, Llama, Mixtral</div>
                     </label>
                     
-                    <label class="personality-card" onclick="selectProvider('openai')">
+                    <label class="personality-card ${config.provider === 'openai' ? 'selected' : ''}" onclick="selectProvider('openai')">
                         <div class="personality-emoji">🤖</div>
                         <div class="personality-name">OpenAI</div>
                         <div class="personality-specialty">GPT-4o, GPT-4o-mini</div>
                     </label>
                     
-                    <label class="personality-card" onclick="selectProvider('ollama')">
+                    <label class="personality-card ${config.provider === 'ollama' ? 'selected' : ''}" onclick="selectProvider('ollama')">
                         <div class="personality-emoji">💾</div>
                         <div class="personality-name">Ollama (Offline)</div>
                         <div class="personality-specialty">Phi-3, TinyLlama, Mistral</div>
                     </label>
                 </div>
                 
+                <div class="form-group" style="margin-top:15px;">
+                    <label>Preferred Model</label>
+                    <select id="providerModel" onchange="selectProviderModel(this.value)">
+                        ${providerModelOptions(config.provider, config.model)}
+                    </select>
+                </div>
+
                 <p style="text-align:center;margin-top:15px;color:#888;font-size:0.9em;">
-                    Selected: <span id="selectedProvider">OpenRouter (Free)</span>
+                    Selected: <span id="selectedProvider">${providerDisplayName(config.provider)}</span>
                 </p>
             `;
         }
 
-        function selectProvider(provider) {
-            config.provider = provider;
+        function providerDisplayName(provider) {
             const names = {
                 'openrouter': 'OpenRouter (Free)',
                 'openai': 'OpenAI',
                 'ollama': 'Ollama (Offline)'
             };
-            document.getElementById('selectedProvider').textContent = names[provider] || provider;
+            return names[provider] || provider;
+        }
+
+        function providerModelOptions(provider, selectedModel) {
+            const modelCatalog = {
+                openrouter: ['google/gemini-2.0-flash-lite:free', 'meta-llama/llama-3.3-70b-instruct:free', 'mistralai/mixtral-8x7b-instruct:free'],
+                openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini'],
+                ollama: ['phi3:latest', 'tinyllama:latest', 'mistral:latest']
+            };
+            const models = modelCatalog[provider] || [];
+            const target = selectedModel && models.includes(selectedModel) ? selectedModel : (models[0] || '');
+            config.model = target;
+            return models.map((model) => `<option value="${model}" ${model === target ? 'selected' : ''}>${model}</option>`).join('');
+        }
+
+        function selectProvider(provider) {
+            config.provider = provider;
+            const content = document.getElementById('stepContent');
+            const cards = content.querySelectorAll('.personality-card');
+            cards.forEach((card) => card.classList.remove('selected'));
+            const selectedName = providerDisplayName(provider);
+            const selectedCard = Array.from(cards).find((card) =>
+                card.querySelector('.personality-name')?.textContent === selectedName
+            );
+            if (selectedCard) selectedCard.classList.add('selected');
+
+            const modelSelect = document.getElementById('providerModel');
+            if (modelSelect) {
+                modelSelect.innerHTML = providerModelOptions(provider, '');
+            }
+            document.getElementById('selectedProvider').textContent = selectedName;
+        }
+
+        function selectProviderModel(model) {
+            config.model = model;
         }
 
         async function loadApiKeys(container) {
@@ -496,6 +538,8 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     keys: config.apiKeys,
+                    provider: config.provider,
+                    model: config.model,
                     personality: config.personality
                 })
             });

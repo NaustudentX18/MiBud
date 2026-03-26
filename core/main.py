@@ -108,7 +108,7 @@ class MiBudApp:
             
             self.display = Display()
             await self.display.initialize()
-            self.display.show_boot_animation()
+            await self.display.show_boot_animation()
             
             self.audio = AudioManager()
             await self.audio.initialize()

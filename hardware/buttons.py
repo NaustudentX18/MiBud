@@ -4,6 +4,7 @@ GPIO Button Handling with Long-press and Hold detection
 """
 
 import os
+import sys
 import logging
 import platform
 import asyncio

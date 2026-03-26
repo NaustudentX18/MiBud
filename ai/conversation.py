@@ -38,7 +38,7 @@ class ConversationManager:
         
         self._is_active = False
         self._conversation_history: List[ConversationMessage] = []
-        self._max_history = 50
+        self._max_history = 10
         self._current_personality: Optional[Personality] = None
         self._callbacks: dict = {}
         
@@ -179,7 +179,7 @@ class ConversationManager:
                 log.warning("💬 No audio device available")
                 return None
                 
-            async def read_chunk():
+            def read_chunk():
                 return device.read()
                 
             while True:

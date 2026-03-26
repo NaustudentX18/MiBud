@@ -4,6 +4,7 @@ RGB LED Control matching personality themes
 """
 
 import os
+import sys
 import logging
 import platform
 from typing import Optional

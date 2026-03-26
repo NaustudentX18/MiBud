@@ -6,6 +6,7 @@ WhisPlay HAT ST7789 240x280 Display with Beautiful Animations
 import os
 import sys
 import time
+import asyncio
 import logging
 import platform
 from typing import Optional
@@ -175,7 +176,7 @@ class Display:
                 sys.path.append(_WHISPLAY_DRIVER)
                 from WhisPlay import WhisPlayBoard
                 self._board = WhisPlayBoard()
-                self._board.lcd_set_brightness(brightness)
+                self._board.lcd_set_brightness(self.brightness)
                 log.info("📺 WhisPlay board initialized")
             else:
                 log.warning("📺 WhisPlay driver not found - simulation mode")
@@ -577,6 +578,3 @@ class Display:
     async def cleanup(self):
         """Cleanup display"""
         log.info("📺 Display cleanup")
-
-
-import asyncio

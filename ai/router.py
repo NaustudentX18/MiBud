@@ -299,7 +299,7 @@ class AIRouter:
         model = self._providers["google"]["models"][0]
         
         try:
-            model_instance = client.generate_model(model)
+            model_instance = client.GenerativeModel(model)
             response = model_instance.generate_content(prompt)
             
             return AIResponse(

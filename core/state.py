@@ -47,7 +47,7 @@ class StateManager:
     """Manages MiBud state"""
     
     def __init__(self):
-        self.current_state = MiBudState.BOOTING
+        self.current_state = MiBudState.IDLE
         self.current_mode = MiBudMode.NORMAL
         self.current_personality = "assistant"
         
@@ -76,10 +76,16 @@ class StateManager:
         
     async def initialize(self):
         """Initialize state"""
-        await self.set_state(MiBudState.IDLE)
+        self.set_state(MiBudState.IDLE)
         
-    async def set_state(self, new_state: MiBudState):
-        """Change state"""
+    def get_state(self) -> str:
+        """Return the current state as a string value"""
+        return self.current_state.value
+
+    def set_state(self, new_state):
+        """Change state; accepts MiBudState enum or string value"""
+        if isinstance(new_state, str):
+            new_state = MiBudState(new_state)
         old_state = self.current_state
         self.current_state = new_state
         self.state_entered_at = time.time()

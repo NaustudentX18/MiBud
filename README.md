@@ -1,182 +1,175 @@
-# MiBud 🤖
+<div align="center">
 
-**Privacy-Focused AI Companion with 20+ Personalities**
+# 🌱 MiBud
 
-A versatile, privacy-first AI assistant for Raspberry Pi Zero 2 W with WhisPlay HAT and PiSugar 3 battery. Works fully offline with local Ollama models or connects to cloud AI providers.
+### *Your Privacy-First AI Companion — Pocket-Sized and Always With You*
+
+[![CI](https://github.com/NaustudentX18/MiBud/actions/workflows/ci.yml/badge.svg)](https://github.com/NaustudentX18/MiBud/actions/workflows/ci.yml)
+![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20Zero%202%20W-c51a4a?logo=raspberry-pi&logoColor=white)
+![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-22c55e)
+![Status](https://img.shields.io/badge/status-beta-f59e0b)
+
+**MiBud** is a lightweight, privacy-focused AI assistant built for low-power Raspberry Pi deployments.  
+Works **fully offline** with local models — or connects to cloud AI when you want it.  
+Runs on your hardware, stores nothing in the cloud, and puts *you* in control.
+
+[Quick Start](#-quick-start) · [Features](#-features) · [Hardware](#-hardware-target) · [Docs](#-documentation) · [Contributing](#-contributing)
+
+</div>
+
+---
+
+## ✨ Why MiBud?
+
+> **Tiny device. Big personality. Zero compromise on privacy.**
+
+| | |
+|---|---|
+| 🔒 **Privacy First** | 100 % offline mode — your conversations never leave your device |
+| 🧠 **20+ Personalities** | From Chef to Therapist — or build your own via the web UI |
+| 🔋 **Battery-Aware** | Designed for 8+ h portable use with PiSugar 3 |
+| ⚡ **Fast Startup** | Boots to ready in ~20 s on Pi Zero 2 W |
+| 🌐 **Multi-Provider AI** | OpenAI · Anthropic · Google · DeepSeek · OpenRouter · Ollama |
+| 📺 **Beautiful Display** | 240×280 ST7789 with 20+ themes and smooth animations |
+
+---
+
+## 🧩 Hardware Target
+
+| Component | Model |
+|-----------|-------|
+| 🖥️ SBC | Raspberry Pi Zero 2 W |
+| 🎧 AI HAT | Whisplay AI HAT (ST7789 display + WM8960 audio) |
+| 🔋 Battery | PiSugar 3 (1200 mAh, I²C management) |
+
+> See [docs/HARDWARE.md](docs/HARDWARE.md) for the full pin-map and driver setup guide.
+
+---
+
+## 🚀 Quick Start
+
+### 1 — Clone and install
+
+```bash
+git clone https://github.com/NaustudentX18/MiBud.git
+cd MiBud
+bash scripts/setup.sh        # installs system deps, venv, Python packages
+```
+
+### 2 — Configure (optional)
+
+```bash
+cp .env.example .env         # add your API keys if using cloud AI
+# edit config/config.json    # or use the web wizard on first boot
+```
+
+### 3 — Start MiBud
+
+```bash
+bash scripts/run.sh          # launches the full app
+# or run the web interface only:
+source venv/bin/activate && python -m web.server
+```
+
+### 4 — Open the dashboard
+
+Browse to **`http://mibud.local:5000`** (or your Pi's IP).  
+First-time? The **Setup Wizard** walks you through every option in under 5 minutes.
+
+### 5 — Validate your hardware
+
+```bash
+bash scripts/first_boot_check.sh
+```
 
 ---
 
 ## ✨ Features
 
 ### 🤖 AI Companionship
-- **20+ Unique Personalities** - From Chef to Therapist, Teacher to Comedian
-- **Custom Personality Creator** - Build your own with web UI
-- **Vision Support** - See and understand images
-- **Dual AI Mode** - Cloud + Offline working together
-- **Multi-Provider Support** - OpenAI, Anthropic, Google, DeepSeek, Ollama
+- **20+ Unique Personalities** — Chef, Therapist, DJ, Teacher, Comedian and more
+- **Custom Personality Creator** — build your own via the web UI
+- **Dual AI Mode** — cloud + offline working in tandem
+- **Multi-Provider Support** — OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Ollama
 
 ### 🔒 Privacy First
-- **100% Offline Mode** - No internet required
-- **Local AI** - Ollama with GGUF models
-- **No Data Collection** - Your conversations stay yours
-- **Speaker Recognition** - Knows who's talking (optional)
-
-### 📷 Vision Capabilities
-- **Camera Support** - Picamera2, USB cameras
-- **Image Understanding** - Ask about what you see
-- **Live Streaming** - Continuous capture mode
+- **100 % Offline Mode** — no internet required with Ollama
+- **Local AI** — GGUF models via Ollama (Phi-3, TinyLlama, Mistral…)
+- **No Data Collection** — your conversations stay on your device
 
 ### 🎤 Voice & Audio
-- **Wake Word Detection** - "Hey MiBud" activation
-- **Voice Activity Detection** - Knows when you're speaking
-- **Push-to-Talk** - Physical button activation
-- **Multiple TTS Options** - OpenAI, Piper, Coqui
+- **Wake Word Detection** — "Hey MiBud" activation
+- **Voice Activity Detection** — knows when you are speaking
+- **Push-to-Talk** — physical button on the HAT
+- **Multiple TTS Options** — OpenAI TTS, Piper (offline)
 
-### 📺 WhisPlay HAT Integration
-- **240x280 Display** - Beautiful animations and UI
-- **20+ Themes** - Match your personality
-- **WM8960 Audio** - Crystal clear speech
-- **RGB LED** - Matches your personality
-- **GPIO Buttons** - Physical control with long-press
+### 📺 Whisplay HAT
+- **240×280 Display** — animations and UI themes
+- **20+ Themes** — matched to the active personality
+- **WM8960 Audio** — crystal-clear capture and playback
+- **RGB LED** — status at a glance
+- **GPIO Buttons** — short/long/hold actions
 
-### 🔋 Battery Powered
-- **PiSugar 3 Support** - 8+ hours portable
-- **Smart Power Management** - Auto sleep/wake
-- **Battery Monitoring** - Always know your status
-
-### 🔗 Multi-Device Sync
-- **Device Discovery** - Automatic on network
-- **Settings Sync** - Share across devices
-- **Peer-to-Peer** - No cloud required
-
-### 🔔 Anomaly Detection
-- **Pattern Monitoring** - Unusual activity alerts
-- **Audio Level Monitoring** - Detect anomalies
-- **Battery Health** - Sensor error detection
+### 🔋 Battery & Power
+- **PiSugar 3 Support** — 8+ h portable use
+- **Smart Power Management** — auto sleep/wake
+- **Battery Monitoring** — low-level warnings and LED indicators
 
 ### 🌐 Web Interface
-- **Setup Wizard** - Easy first-time configuration
-- **Dashboard** - Real-time monitoring and control
-- **Personality Creator** - Visual personality builder
-- **API Endpoints** - Full REST API
+- **Setup Wizard** — guided 8-step onboarding
+- **Live Dashboard** — chat, settings, system monitoring
+- **REST API** — integrate with anything
+
+### 📷 Vision (Optional)
+- **Camera Support** — Picamera2 (CSI) and USB cameras
+- **Image Understanding** — ask about what the camera sees
 
 ---
 
-## 🚀 Quick Start
+## 📂 Project Structure
 
-### Hardware Required
-- Raspberry Pi Zero 2 W
-- WhisPlay HAT (240x280 display, WM8960 audio)
-- PiSugar 3 battery
-- MicroSD card (16GB+)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/NaustudentX18/MiBud.git
-cd MiBud
-
-# Run setup
-bash setup.sh
-
-# Start MiBud
-python -m core.main
 ```
-
-### First Time Setup
-
-1. Open browser to `http://mibud.local:5000`
-2. Follow the Setup Wizard
-3. Choose your personality
-4. Enter API keys (optional)
-5. Start chatting!
-
----
-
-## 👥 Personalities
-
-| # | Personality | Emoji | Specialty |
-|---|-------------|-------|-----------|
-| 1 | Assistant | 🤖 | General help |
-| 2 | Chef | 👨‍🍳 | Cooking & recipes |
-| 3 | Hacker | 🖥️ | Tech support |
-| 4 | DJ | 🎧 | Music & fun |
-| 5 | Mentor | 📚 | Learning & teaching |
-| 6 | Therapist | 🧠 | Mental wellness |
-| 7 | Nurse | 👩‍⚕️ | Health & first aid |
-| 8 | Teacher | 📖 | Education |
-| 9 | Comedian | 😄 | Entertainment |
-| 10 | News Anchor | 📺 | News & facts |
-| 11 | Pilot | ✈️ | Aviation & travel |
-| 12 | Drill Sergeant | 💪 | Fitness motivation |
-| 13 | Librarian | 📚 | Research & facts |
-| 14 | Detective | 🔍 | Problem solving |
-| 15 | Scientist | 🔬 | Science & research |
-| 16 | Artist | 🎨 | Creative art |
-| 17 | Historian | 🏛️ | History & stories |
-| 18 | Explorer | 🧭 | Travel & discovery |
-| 19 | Companion | 💜 | AI friendship |
-| 20 | Custom | ⭐ | Build your own |
+MiBud/
+├── core/               # State machine, config, event bus
+├── ai/                 # Multi-provider AI router, wake-word, TTS/STT
+├── personalities/      # 20+ preset personalities + custom manager
+├── hardware/           # Display, audio, buttons, battery, LED, camera
+├── web/                # Flask server, setup wizard, dashboard templates
+├── sync/               # Multi-device peer-to-peer sync
+├── home/               # Home automation (GPIO + Home Assistant)
+├── utils/              # Timers, reminders, notes
+├── scripts/            # setup.sh · run.sh · first_boot_check.sh
+├── deploy/             # mibud.service (systemd)
+├── docs/               # HARDWARE.md · FIRST_BOOT_VALIDATION.md
+├── tests/              # Unit and integration tests
+├── .env.example        # Environment variable template
+└── requirements.txt    # Python dependencies
+```
 
 ---
 
 ## 🧠 AI Providers
 
-### Cloud (Free Tier Available)
-- **OpenRouter** - Gemini, Llama, Mixtral (FREE)
-- **OpenAI** - GPT-4o with Vision
-- **Anthropic** - Claude 3.5 Sonnet
-- **Google** - Gemini 2.0 Flash
-- **DeepSeek** - DeepSeek Chat
+### ☁️ Cloud (free tier available)
+| Provider | Models |
+|----------|--------|
+| OpenRouter | Gemini, Llama, Mixtral *(free tier)* |
+| OpenAI | GPT-4o with vision |
+| Anthropic | Claude 3.5 Sonnet |
+| Google | Gemini 2.0 Flash |
+| DeepSeek | DeepSeek Chat |
 
-### Offline (Local)
-- **Ollama** - Phi-3, TinyLlama, Mistral, Qwen2
-
----
-
-## 📁 Project Structure
-
-```
-MiBud/
-├── core/               # Core application
-│   ├── main.py         # Entry point
-│   ├── config.py       # Configuration
-│   ├── state.py        # State machine
-│   └── events.py       # Event system
-├── ai/                 # AI system
-│   ├── router.py       # Multi-provider routing
-│   ├── wakeword.py     # Wake word detection
-│   ├── speaker.py      # Speaker recognition
-│   └── anomaly.py      # Anomaly detection
-├── personalities/      # Personality system
-│   ├── presets.py      # 20+ personalities
-│   └── manager.py     # Custom personality manager
-├── hardware/          # Hardware drivers
-│   ├── display.py     # ST7789 display
-│   ├── audio.py       # WM8960 audio
-│   ├── buttons.py      # GPIO buttons
-│   ├── battery.py      # PiSugar 3
-│   ├── led.py          # RGB LED
-│   └── camera.py       # Camera support
-├── web/               # Web interface
-│   ├── server.py      # Flask server
-│   ├── wizard.py      # Setup wizard
-│   └── templates/     # HTML templates
-├── sync/              # Multi-device sync
-│   └── manager.py     # Sync manager
-├── utils/             # Utilities
-│   └── utilities.py   # Timers, reminders, notes
-├── home/              # Home automation
-│   └── automation.py  # GPIO + Home Assistant
-└── requirements.txt   # Python dependencies
-```
+### 🖥️ Offline (local)
+| Provider | Models |
+|----------|--------|
+| Ollama | Phi-3, TinyLlama, Mistral, Qwen2 |
 
 ---
 
 ## 🔧 Configuration
 
-Edit `config/config.json`:
+Edit `config/config.json` (auto-created on first run):
 
 ```json
 {
@@ -189,130 +182,106 @@ Edit `config/config.json`:
     },
     "features": {
         "enable_wake_word": true,
-        "enable_speaker_recognition": false,
         "enable_anomaly_detection": false,
         "enable_multi_device_sync": false
-    },
-    "api_keys": {
-        "openrouter": "sk-or-your-key",
-        "openai": "sk-your-key"
     }
 }
 ```
 
----
-
-## 🎛️ Controls
-
-### Physical Buttons
-- **Button A (Short)** - Activate listening
-- **Button A (Long)** - Cancel operation
-- **Button A (Hold)** - Emergency stop
-- **Button B (Short)** - Cycle personality
-- **Button B (Long)** - Settings menu
-
-### Voice Commands
-- Say **"Hey MiBud"** - Wake word (if enabled)
-- Say **"Stop"** - Cancel current operation
-- Say personality names to switch
+Or set API keys via environment variables — copy `.env.example` to `.env`.
 
 ---
 
-## 🌐 Web Interface
+## 🌐 Web API (Quick Reference)
 
-Access from any device on your network:
-- **Setup Wizard**: `http://mibud.local:5000/wizard`
-- **Dashboard**: `http://mibud.local:5000/dashboard`
-
-### Dashboard Features
-- Real-time conversation
-- Personality switching
-- Custom personality creator
-- Camera capture
-- System monitoring
-- Alert history
-
-### API Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/status` | GET | System status |
-| `/api/config` | GET/POST | Configuration |
-| `/api/personality/list` | GET | All personalities |
-| `/api/personality/create` | POST | Create custom |
-| `/api/camera/capture` | GET | Capture image |
-| `/api/system/info` | GET | System info |
-| `/api/alerts` | GET | Alert history |
+| `/api/status` | GET | System state, battery, personality |
+| `/api/config` | GET / POST | Read or update config |
+| `/api/personality/list` | GET | All available personalities |
+| `/api/personality/create` | POST | Create a custom personality |
+| `/api/camera/capture` | GET | Capture image from camera |
+| `/api/system/info` | GET | CPU, RAM, storage |
+| `/api/alerts` | GET | Anomaly alert history |
 
 ---
 
-## 📊 Performance
+## 📊 Performance (Pi Zero 2 W)
 
-| Metric | Target | Actual |
-|--------|--------|--------|
-| Voice Response (Online) | <3s | ~2.5s |
-| Voice Response (Offline) | <5s | ~4s |
-| Memory Usage | <256MB | ~180MB |
-| Battery Life | >8h | 8-10h |
-| Startup Time | <30s | ~20s |
-
----
-
-## 🔐 Security
-
-- All AI processing is optional (local or cloud)
-- No data is sent to external servers without consent
-- Conversations stored locally
-- API keys stored securely in config
-- Anomaly detection for tampering alerts
+| Metric | Target |
+|--------|--------|
+| Startup time | < 30 s |
+| Voice response (cloud) | ~ 2.5 s |
+| Voice response (Ollama) | ~ 4 s |
+| Memory usage | ~ 180 MB |
+| Battery life | 8–10 h |
 
 ---
 
-## 🧪 Development
+## 🛠️ Development
 
 ```bash
-# Install dev dependencies
+# Setup
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
 # Run tests
-pytest tests/
+python -m pytest tests/ -v
 
-# Run linting
+# Lint
 ruff check .
+
+# Demo mode (no hardware needed)
+python demo.py
 ```
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Camera vision integration with cloud AI
+- [ ] Advanced TTS — Piper offline voice cloning
+- [ ] Wake-word model fine-tuning
+- [ ] Community personality sharing
+- [ ] Mobile companion app
+- [ ] Hardened power-loss recovery
+- [ ] Release packaging pipeline
+
+---
+
+## 📚 Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [docs/HARDWARE.md](docs/HARDWARE.md) | Pin map, driver setup, HAT wiring |
+| [docs/FIRST_BOOT_VALIDATION.md](docs/FIRST_BOOT_VALIDATION.md) | Step-by-step boot validation |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome! Areas needing help:
-- Additional AI providers
-- New personalities
-- UI/UX improvements
-- Documentation
-- Testing on hardware
+Contributions are welcome — bugs, features, docs, new personalities, hardware tests.  
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
 ## 📜 License
 
-MIT License - See [LICENSE](LICENSE) file.
+[MIT License](LICENSE) — free to use, modify, and distribute.
 
 ---
 
-## 🙏 Acknowledgments
+<div align="center">
 
-- **WhisPlay HAT** - PiSugar for the amazing hardware
-- **Ollama** - For local AI
-- **OpenRouter** - For free tier AI access
-- **Open Source Community** - For all the libraries
-
----
-
-**Your privacy-focused AI companion. Own it. Control it. Trust it. 🔒**
+**Own it. Control it. Trust it. 🔒**
 
 ```
-    ╔═══════════════════════════════════════╗
-    ║         MiBud - AI Companion         ║
-    ║   Privacy-First | Offline-First      ║
-    ╚═══════════════════════════════════════╝
+╔═══════════════════════════════════════╗
+║         MiBud — AI Companion          ║
+║   Privacy-First · Offline-First       ║
+╚═══════════════════════════════════════╝
 ```
+
+</div>

@@ -1,0 +1,23 @@
+[Unit]
+Description=MiBud - Privacy-Focused AI Companion
+Documentation=https://github.com/NaustudentX18/MiBud
+After=network.target sound.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/MiBud
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/bin/bash -c 'mkdir -p config/profiles models logs data'
+ExecStart=/home/pi/MiBud/venv/bin/python -m core.main
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/pi/MiBud/logs/mibud.log
+StandardError=append:/home/pi/MiBud/logs/mibud.log
+KillMode=mixed
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

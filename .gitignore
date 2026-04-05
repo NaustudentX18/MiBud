@@ -133,3 +133,13 @@ recordings/
 
 # PiSugar battery
 pisugar.json
+
+# Runtime directories (created at startup)
+logs/
+config/profiles/
+
+# Assets (binary files managed externally)
+assets/*.png
+assets/*.jpg
+assets/*.jpeg
+assets/*.gif

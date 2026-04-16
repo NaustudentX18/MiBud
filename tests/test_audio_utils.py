@@ -56,7 +56,7 @@ def test_vad_detect_returns_bool():
 
     vad = VoiceActivityDetector(threshold=200)
     silent = bytes(1024)
-    result = asyncio.get_event_loop().run_until_complete(vad.detect(silent))
+    result = asyncio.run(vad.detect(silent))
     assert isinstance(result, bool), f"Expected bool, got {type(result)}"
 
 
@@ -108,5 +108,5 @@ def test_wakeword_stop_closes_audio_device(monkeypatch):
         await ww.stop()
         return len(close_called) > 0
 
-    result = asyncio.get_event_loop().run_until_complete(test())
+    result = asyncio.run(test())
     assert result, "PCM.close() was not called during stop()"

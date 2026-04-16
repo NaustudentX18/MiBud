@@ -20,7 +20,7 @@ class Config:
         self.config_dir = Path(__file__).parent.parent / "config"
         self.config_file = self.config_dir / "config.json"
         self.profiles_dir = self.config_dir / "profiles"
-        
+
         # Default configuration
         self.data: Dict[str, Any] = {
             # AI Configuration
@@ -81,9 +81,26 @@ class Config:
                 "enable_anomaly_detection": False,
                 "enable_multi_device_sync": False,
             },
+            # Schema version for migrations
+            "config_version": 1,
             # First run tracking
             "first_run": True,
             "setup_complete": False,
+            # Tuning constants — magic numbers externalized here
+            "tuning": {
+                "conversation_max_history": 10,
+                "stt_silence_threshold": 500,
+                "stt_max_silence_chunks": 30,
+                "vad_threshold": 200,
+                "vad_min_trigger_frames": 3,
+                "vad_cooldown_seconds": 2.0,
+                "battery_low_threshold": 20,
+                "battery_critical_threshold": 5,
+                "sync_interval_seconds": 30,
+                "ai_max_tokens": 500,
+                "idle_timeout_seconds": 60,
+                "sleep_timeout_seconds": 300,
+            },
         }
 
         # Private secrets — NEVER saved to disk
@@ -102,9 +119,26 @@ class Config:
             try:
                 with open(self.config_file, 'r') as f:
                     saved = json.load(f)
+                    saved = self._migrate(saved)
                     self.data.update(saved)
             except Exception as e:
                 print(f"Warning: Could not load config: {e}")
+
+    def _migrate(self, saved: Dict[str, Any]) -> Dict[str, Any]:
+        """Run migrations from older config versions"""
+        version = saved.get("config_version", 0)
+        while version < self.data.get("config_version", 1):
+            if version == 0:
+                saved = self._migrate_v0_to_v1(saved)
+                version = 1
+        return saved
+
+    def _migrate_v0_to_v1(self, saved: Dict[str, Any]) -> Dict[str, Any]:
+        """v0 → v1: add tuning section and config_version"""
+        if "tuning" not in saved:
+            saved["tuning"] = dict(self.data["tuning"])
+        saved["config_version"] = 1
+        return saved
                 
     def save(self):
         """Save configuration to file"""
@@ -115,7 +149,8 @@ class Config:
                 if k != "token"
             }
         self.config_dir.mkdir(parents=True, exist_ok=True)
-        with open(self.config_file, 'w') as f:
+        save_path = self.config_dir / "config.json"
+        with open(save_path, 'w') as f:
             json.dump(self.data, f, indent=2)
             
     def is_first_run(self) -> bool:

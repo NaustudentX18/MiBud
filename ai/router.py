@@ -7,6 +7,7 @@ import os
 import logging
 import asyncio
 import time
+import aiohttp
 from typing import Optional, Dict, List, Any
 from dataclasses import dataclass
 from enum import Enum
@@ -160,31 +161,52 @@ class AIRouter:
     async def _init_ollama(self):
         """Initialize Ollama for offline"""
         try:
-            import requests
             ollama_url = self.config.get("ai.ollama_url", "http://localhost:11434")
-            
-            # Test connection
+
+            # Test connection asynchronously
             try:
-                response = requests.get(f"{ollama_url}/api/tags", timeout=2)
-                if response.status_code == 200:
-                    models = response.json().get("models", [])
-                    self._providers["ollama"] = {
-                        "url": ollama_url,
-                        "models": [m["name"] for m in models],
-                        "available": True
-                    }
-                    log.info(f"✅ Ollama provider ready ({len(models)} models)")
-            except:
-                log.info("⚠️ Ollama not running - offline mode unavailable")
-                self._providers["ollama"] = {"available": False}
-                
+                timeout = aiohttp.ClientTimeout(total=2)
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    async with session.get(f"{ollama_url}/api/tags") as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            models = data.get("models", [])
+                            self._providers["ollama"] = {
+                                "url": ollama_url,
+                                "models": [m["name"] for m in models],
+                                "available": True
+                            }
+                            log.info(f"✅ Ollama provider ready ({len(models)} models)")
+                            return
+            except Exception:
+                pass
+
+            log.info("⚠️ Ollama not running - offline mode unavailable")
+            self._providers["ollama"] = {"available": False}
+
         except Exception as e:
             log.warning(f"Ollama init failed: {e}")
             
+    async def _check_internet_connectivity(self) -> bool:
+        """Check if internet is available by attempting a lightweight request."""
+        try:
+            timeout = aiohttp.ClientTimeout(total=3)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get("https://httpbin.org/get", ssl=False) as resp:
+                    return resp.status == 200
+        except Exception:
+            return False
+
     async def generate(self, prompt: str, context: List[ChatMessage] = None,
                       prefer_offline: bool = False) -> AIResponse:
         """Generate AI response with fallback"""
-        
+
+        # Auto-detect offline: check connectivity if prefer_offline not explicitly set
+        if not prefer_offline:
+            if not await self._check_internet_connectivity():
+                log.info("🌐 No internet — switching to offline mode")
+                prefer_offline = True
+
         # Try offline first if preferred or no internet
         if prefer_offline and "ollama" in self._providers:
             response = await self._generate_ollama(prompt, context)
@@ -368,38 +390,37 @@ class AIRouter:
                             
     async def _generate_ollama(self, prompt: str, context: List[ChatMessage] = None) -> AIResponse:
         """Generate with local Ollama"""
-        import requests
-        
         ollama_info = self._providers.get("ollama", {})
         if not ollama_info.get("available", False):
             return AIResponse(text="", provider="ollama", model="none",
                             latency_ms=0, error="Ollama not available")
-            
+
         url = f"{ollama_info['url']}/api/generate"
         model = self.config.get("ai.offline_model", "phi3:latest")
-        
+
         payload = {
             "model": model,
             "prompt": prompt,
             "stream": False
         }
-        
+
         start_time = time.time()
-        
+
         try:
-            response = requests.post(url, json=payload, timeout=60)
-            
-            if response.status_code == 200:
-                data = response.json()
-                return AIResponse(
-                    text=data.get("response", ""),
-                    provider="ollama",
-                    model=model,
-                    latency_ms=int((time.time() - start_time) * 1000)
-                )
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.post(url, json=payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return AIResponse(
+                            text=data.get("response", ""),
+                            provider="ollama",
+                            model=model,
+                            latency_ms=int((time.time() - start_time) * 1000)
+                        )
         except Exception as e:
             log.error(f"Ollama error: {e}")
-            
+
         return AIResponse(text="", provider="ollama", model=model,
                         latency_ms=int((time.time() - start_time) * 1000), error=str(e))
 

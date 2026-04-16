@@ -166,8 +166,8 @@ class ConversationManager:
         self._emit("state_changed", "listening")
         
         try:
-            import audioop
-            
+            from utils.audio_utils import rms_level
+
             audio_chunks = []
             silence_threshold = 500
             silence_count = 0
@@ -190,7 +190,7 @@ class ConversationManager:
                     )
                     
                     if data:
-                        rms = audioop.rms(data, 2)
+                        rms = rms_level(data, 2)
                         
                         if rms > silence_threshold:
                             is_speaking = True

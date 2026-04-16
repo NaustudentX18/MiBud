@@ -150,8 +150,8 @@ class AudioManager:
             
             data = device.read()
             if data and data[1]:
-                import audioop
-                rms = audioop.rms(data[1], 2)
+                from utils.audio_utils import rms_level
+                rms = rms_level(data[1], 2)
                 return rms
         except Exception:
             pass

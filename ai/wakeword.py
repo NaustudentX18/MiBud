@@ -3,6 +3,10 @@ MiBud - Voice Activity Detection & Wake Word
 openWakeWord integration for voice wake detection
 """
 
+try:
+    import alsaaudio as _alsaaudio
+except ImportError:
+    _alsaaudio = None
 import asyncio
 import logging
 from typing import Callable, Optional, List
@@ -21,6 +25,8 @@ class WakeWordDetector:
         self.is_initialized = False
         self.is_listening = False
         self._detector = None
+        self._audio_device = None
+        self._vad_detector = None
         self._audio_task = None
         self._callback: Optional[Callable] = None
         self._enabled = config.get("wake_word.enabled", True)
@@ -102,30 +108,63 @@ class WakeWordDetector:
             except asyncio.CancelledError:
                 pass
             self._audio_task = None
-            
+
+        # Close PCM device to release audio hardware
+        if self._audio_device is not None:
+            try:
+                self._audio_device.close()
+            except Exception:
+                pass
+            self._audio_device = None
+
         log.info("🎤 Wake word listening stopped")
         
     async def _audio_loop(self):
         """Audio capture loop for wake word detection"""
-        import audioop
-        import alsaaudio
         
         try:
-            device = alsaaudio.PCM(
-                alsaaudio.PCM_CAPTURE,
-                alsaaudio.PCM_NORMAL,
+            self._audio_device = _alsaaudio.PCM(
+                _alsaaudio.PCM_CAPTURE,
+                _alsaaudio.PCM_NORMAL,
                 device=self.config.get("hardware.audio_input_device", "plughw:1,0")
             )
-            device.setrate(16000)
-            device.setchannels(1)
-            device.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-            device.setperiodsize(1024)
-            
+            self._audio_device.setrate(16000)
+            self._audio_device.setchannels(1)
+            self._audio_device.setformat(_alsaaudio.PCM_FORMAT_S16_LE)
+            self._audio_device.setperiodsize(1024)
+            device = self._audio_device
+
         except Exception as e:
             log.error(f"🎤 Failed to open audio device: {e}")
             return
-            
+
         log.info("🎤 Audio loop started for wake word detection")
+
+        # Calibrate VAD with first ~1 second of ambient audio
+        try:
+            from utils.audio_utils import rms_level
+            calibration_chunks = []
+            import time
+            start = time.time()
+            while time.time() - start < 1.0 and self.is_listening:
+                _, cal_data = device.read()
+                if cal_data:
+                    calibration_chunks.append(cal_data)
+                await asyncio.sleep(0.01)
+
+            if calibration_chunks and hasattr(self, '_vad_detector') and self._vad_detector:
+                await self._vad_detector.calibrate(calibration_chunks)
+            elif calibration_chunks:
+                # Inline calibration for VAD threshold
+                levels = [rms_level(d, 2) for d in calibration_chunks if d]
+                if levels:
+                    import statistics
+                    mean = statistics.mean(levels)
+                    stdev = statistics.stdev(levels) if len(levels) > 1 else 0
+                    self._vad_threshold = int(mean + 2 * stdev + 10)
+                    log.info(f"🎤 VAD calibrated: threshold={self._vad_threshold}")
+        except Exception as e:
+            log.debug(f"VAD calibration skipped: {e}")
         
         while self.is_listening:
             try:
@@ -140,7 +179,9 @@ class WakeWordDetector:
                         if score > self._sensitivity:
                             await self._handle_wake_word(model_name, score)
                 else:
-                    await self._vad_check(data, audioop)
+                    from utils.audio_utils import rms_level
+                    rms = rms_level(data, 2)
+                    await self._vad_check_by_rms(rms)
                     
             except asyncio.CancelledError:
                 break
@@ -148,25 +189,24 @@ class WakeWordDetector:
                 log.debug(f"Wake word detection: {e}")
                 await asyncio.sleep(0.01)
                 
-    async def _vad_check(self, data: bytes, audioop):
-        """Voice activity detection as fallback"""
+    async def _vad_check_by_rms(self, rms: int):
+        """VAD check using RMS level (uses struct, not audioop)."""
         import time
-        
+
         try:
-            rms = audioop.rms(data, 2)
             current_time = time.time()
-            
+
             if rms > self._vad_threshold:
                 self._consecutive_frames += 1
                 self._frame_count += 1
-                
+
                 if (self._consecutive_frames >= self._min_trigger_frames and
                     current_time - self._last_trigger_time > self._cooldown_seconds):
                     self._last_trigger_time = current_time
                     await self._handle_wake_word("voice_activity", rms / 1000.0)
             else:
                 self._consecutive_frames = 0
-                
+
         except Exception as e:
             log.debug(f"VAD check: {e}")
             
@@ -201,21 +241,41 @@ class WakeWordDetector:
 
 class VoiceActivityDetector:
     """Voice activity detection for speech presence"""
-    
+
     def __init__(self, threshold: float = 200):
         self.threshold = threshold
         self.is_speech = False
-        
+
     async def detect(self, audio_data: bytes) -> bool:
         """Detect if speech is present in audio"""
         try:
-            import audioop
-            rms = audioop.rms(audio_data, 2)
+            from utils.audio_utils import rms_level
+            rms = rms_level(audio_data, 2)
             self.is_speech = rms > self.threshold
             return self.is_speech
-        except:
+        except Exception:
             return False
-            
+
     def set_threshold(self, threshold: float):
         """Set detection threshold"""
         self.threshold = threshold
+
+    async def calibrate(self, audio_chunks: List[bytes], samples: int = 10):
+        """Calibrate VAD threshold to ambient noise level.
+
+        Call this during startup with ~1 second of ambient audio.
+        Sets threshold to mean RMS + 2 standard deviations.
+        """
+        from utils.audio_utils import rms_level
+        levels = []
+
+        for chunk in audio_chunks[:samples]:
+            level = rms_level(chunk, width=2)
+            levels.append(level)
+
+        if levels:
+            import statistics
+            mean = statistics.mean(levels)
+            stdev = statistics.stdev(levels) if len(levels) > 1 else 0
+            self.threshold = int(mean + 2 * stdev + 10)
+            log.info(f"🎤 VAD calibrated: threshold={self.threshold}")

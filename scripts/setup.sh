@@ -116,11 +116,22 @@ ollama pull phi3:latest
 ollama pull tinyllama:latest
 ollama pull mistral:latest
 
+# ── Create .env from example ──────────────────────────────────
+echo ""
+echo "🔑 Creating .env file for API keys..."
+if [ ! -f ".env" ]; then
+    cp .env.example .env
+    echo "   Created .env — add your API keys there"
+else
+    echo "   .env already exists"
+fi
+
 # ── Create Config File ─────────────────────────────────────────
 echo ""
 echo "⚙️  Creating configuration..."
 cat > config/config.json << 'EOF'
 {
+    "config_version": 1,
     "ai": {
         "default_provider": "openrouter",
         "offline_provider": "ollama",
@@ -130,19 +141,11 @@ cat > config/config.json << 'EOF'
         "offline_model": "phi3:latest",
         "ollama_url": "http://localhost:11434"
     },
-    "api_keys": {
-        "openai": "",
-        "anthropic": "",
-        "google": "",
-        "deepseek": "",
-        "openrouter": "",
-        "elevenlabs": ""
-    },
     "personality": {
         "current": "assistant",
         "voice_speed": 1.0,
         "voice_pitch": 1.0,
-        "voice_style": "warm"
+        "voice_style": "neutral"
     },
     "wake_word": {
         "enabled": true,
@@ -152,8 +155,47 @@ cat > config/config.json << 'EOF'
     },
     "hardware": {
         "display_brightness": 70,
+        "display_rotation": 0,
         "audio_input_device": "plughw:1,0",
-        "audio_output_device": "default"
+        "audio_output_device": "default",
+        "audio_sample_rate": 16000,
+        "enable_led": true
+    },
+    "display": {
+        "theme": "auto",
+        "show_clock": true,
+        "show_battery": true,
+        "show_wifi": true,
+        "idle_timeout": 60,
+        "sleep_timeout": 300
+    },
+    "network": {
+        "hostname": "mibud",
+        "auto_reconnect": true
+    },
+    "features": {
+        "enable_tts": true,
+        "enable_stt": true,
+        "enable_weather": true,
+        "enable_timers": true,
+        "enable_home_assistant": false,
+        "enable_speaker_recognition": false,
+        "enable_anomaly_detection": false,
+        "enable_multi_device_sync": false
+    },
+    "tuning": {
+        "conversation_max_history": 10,
+        "stt_silence_threshold": 500,
+        "stt_max_silence_chunks": 30,
+        "vad_threshold": 200,
+        "vad_min_trigger_frames": 3,
+        "vad_cooldown_seconds": 2.0,
+        "battery_low_threshold": 20,
+        "battery_critical_threshold": 5,
+        "sync_interval_seconds": 30,
+        "ai_max_tokens": 500,
+        "idle_timeout_seconds": 60,
+        "sleep_timeout_seconds": 300
     },
     "first_run": true,
     "setup_complete": false

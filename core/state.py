@@ -9,6 +9,9 @@ from typing import Dict, Any, Optional, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 import time
+import logging
+
+log = logging.getLogger("MiBud")
 
 
 class MiBudState(Enum):
@@ -73,6 +76,11 @@ class StateManager:
         
         # Callbacks
         self.state_callbacks: list[Callable] = []
+
+        # Auto-recovery settings
+        self._error_recovery_timeout = 5.0  # seconds before auto-recovery
+        self._recovery_task = None
+        self._is_recovering = False
         
     async def initialize(self):
         """Initialize state"""
@@ -96,7 +104,64 @@ class StateManager:
                 callback(old_state, new_state)
             except Exception as e:
                 print(f"State callback error: {e}")
-                
+
+        # Auto-recovery from ERROR state
+        if new_state == MiBudState.ERROR:
+            self._is_recovering = True
+            self._schedule_recovery()
+
+    def _schedule_recovery(self):
+        """Schedule automatic recovery from ERROR state."""
+        if self._recovery_task is not None:
+            self._recovery_task.cancel()
+            self._recovery_task = None
+
+        async def recovery_loop():
+            await asyncio.sleep(self._error_recovery_timeout)
+            if self.current_state == MiBudState.ERROR and self._is_recovering:
+                old = self.current_state
+                self.current_state = MiBudState.IDLE
+                self.state_entered_at = time.time()
+                log.info("Auto-recovering from ERROR to IDLE")
+                for callback in self.state_callbacks:
+                    try:
+                        callback(old, self.current_state)
+                    except Exception:
+                        pass
+                self._is_recovering = False
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running event loop — schedule via call_later
+            loop = asyncio.get_event_loop()
+
+        try:
+            self._recovery_task = asyncio.create_task(recovery_loop())
+        except RuntimeError:
+            # Fallback for sync contexts: use call_later
+            def sync_recovery():
+                time.sleep(self._error_recovery_timeout)
+                if self.current_state == MiBudState.ERROR and self._is_recovering:
+                    old = self.current_state
+                    self.current_state = MiBudState.IDLE
+                    self.state_entered_at = time.time()
+                    log.info("Auto-recovering from ERROR to IDLE")
+                    for callback in self.state_callbacks:
+                        try:
+                            callback(old, self.current_state)
+                        except Exception:
+                            pass
+                    self._is_recovering = False
+            loop.call_later(self._error_recovery_timeout, sync_recovery)
+
+    def cancel_recovery(self):
+        """Cancel any pending error recovery."""
+        if self._recovery_task:
+            self._recovery_task.cancel()
+            self._recovery_task = None
+        self._is_recovering = False
+
     async def set_mode(self, new_mode: MiBudMode):
         """Change mode"""
         self.current_mode = new_mode

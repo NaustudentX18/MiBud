@@ -3,6 +3,7 @@ MiBud Home Automation Integration
 GPIO Control & Home Assistant Integration
 """
 
+import os
 import logging
 import asyncio
 from typing import Dict, List, Optional, Any
@@ -153,8 +154,8 @@ class HomeAssistantClient:
     
     def __init__(self, config):
         self.config = config
-        self.base_url = "http://homeassistant.local:8123"
-        self.token = ""
+        self.base_url = os.environ.get("HA_URL", "http://homeassistant.local:8123")
+        self.token = os.environ.get("HA_TOKEN", "")
         self.is_connected = False
         
     async def initialize(self):

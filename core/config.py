@@ -108,6 +108,12 @@ class Config:
                 
     def save(self):
         """Save configuration to file"""
+        # Strip HA token from persisted data — it lives in .env only
+        if "home_assistant" in self.data:
+            self.data["home_assistant"] = {
+                k: v for k, v in self.data["home_assistant"].items()
+                if k != "token"
+            }
         self.config_dir.mkdir(parents=True, exist_ok=True)
         with open(self.config_file, 'w') as f:
             json.dump(self.data, f, indent=2)

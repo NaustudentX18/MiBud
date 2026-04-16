@@ -14,7 +14,8 @@ from pathlib import Path
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from web.auth import require_auth
 
 log = logging.getLogger("MiBud")
 
@@ -311,6 +312,7 @@ def api_config():
 
 
 @app.route("/api/config/save", methods=["POST"])
+@require_auth
 def api_config_save():
     """Save full configuration."""
     try:
@@ -345,6 +347,7 @@ def api_personality_list():
 
 
 @app.route("/api/personality/set", methods=["POST"])
+@require_auth
 def api_personality_set():
     """Set current personality."""
     data = request.get_json(silent=True) or {}
@@ -361,6 +364,7 @@ def api_personality_set():
 
 
 @app.route("/api/personality/create", methods=["POST"])
+@require_auth
 def api_personality_create():
     """Create a new custom personality."""
     try:
@@ -396,6 +400,7 @@ def api_personality_get(personality_id):
 
 
 @app.route("/api/personality/<personality_id>", methods=["PUT"])
+@require_auth
 def api_personality_update(personality_id):
     """Update a custom personality."""
     try:
@@ -411,6 +416,7 @@ def api_personality_update(personality_id):
 
 
 @app.route("/api/personality/<personality_id>", methods=["DELETE"])
+@require_auth
 def api_personality_delete(personality_id):
     """Delete a custom personality."""
     from personalities.manager import PersonalityManager
@@ -448,6 +454,7 @@ def _write_keys_to_env(keys: dict) -> None:
 
 
 @app.route("/api/keys/save", methods=["POST"])
+@require_auth
 def api_keys_save():
     """Save API keys to .env file"""
     data = request.get_json(silent=True) or {}
@@ -461,6 +468,19 @@ def api_keys_save():
     except Exception as exc:
         log.error(f"Failed to write keys to .env: {exc}")
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@app.route("/api/pin/set", methods=["POST"])
+def api_pin_set():
+    """Set the setup PIN and mark session as authenticated."""
+    data = request.get_json(silent=True) or {}
+    pin = data.get("pin", "")
+    if not pin or len(pin) < 4:
+        return jsonify({"error": "PIN must be at least 4 characters"}), 400
+    from web.auth import set_pin as _set_pin
+    _set_pin(pin)
+    session["auth_ok"] = True
+    return jsonify({"success": True})
 
 
 @app.route("/api/mission/bootstrap")
@@ -496,6 +516,7 @@ def api_mission_bootstrap():
 
 
 @app.route("/api/mission/settings", methods=["POST"])
+@require_auth
 def api_mission_settings():
     """Update a single mission setting path."""
     data = request.get_json(silent=True) or {}
@@ -541,6 +562,7 @@ def api_mission_settings():
 
 
 @app.route("/api/mission/provider", methods=["POST"])
+@require_auth
 def api_mission_provider():
     """Set active provider and model from Mission CTL."""
     data = request.get_json(silent=True) or {}
@@ -615,6 +637,7 @@ def api_camera_capture():
 
 
 @app.route("/api/camera/enable", methods=["POST"])
+@require_auth
 def api_camera_enable():
     """Enable/disable camera feature."""
     try:
@@ -699,6 +722,7 @@ def api_alerts():
 
 
 @app.route("/api/alerts/clear", methods=["POST"])
+@require_auth
 def api_alerts_clear():
     """Clear alert history."""
     from ai.anomaly import AnomalyDetector

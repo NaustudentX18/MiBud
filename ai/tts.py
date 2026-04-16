@@ -117,6 +117,12 @@ class PiperTTS(TTSProvider):
     async def cleanup(self):
         if self._process:
             self._process.terminate()
+            try:
+                self._process.wait(timeout=2.0)
+            except Exception:
+                self._process.kill()
+                self._process.wait()
+            self._process = None
 
 
 class CoquiTTS(TTSProvider):

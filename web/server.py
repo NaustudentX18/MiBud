@@ -23,6 +23,38 @@ log = logging.getLogger("MiBud")
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.urandom(24)
 
+
+def _sanitize_error_message(message: str) -> str:
+    """Remove file paths from error messages so nothing leaks to clients."""
+    import re
+    # Strip Python traceback file references: "File '/path/file.py', line N"
+    message = re.sub(r'File "[^"]+\.py",?\s*line\s*\d+', "", message)
+    message = re.sub(r"File '[^']+\.py',?\s*line\s*\d+", "", message)
+    # Strip standalone paths ending in .py:\d+ or .py", line N
+    message = re.sub(r'/?[^:"\s]+\.py:\d+', "", message)
+    message = re.sub(r'/?[^:\'\s]+\.py",?\s*line\s*\d+', "", message)
+    # Collapse multiple spaces
+    message = re.sub(r"  +", " ", message).strip()
+    return message
+
+
+@app.errorhandler(Exception)
+def handle_exception(exc):
+    """Global error handler — log full traceback server-side, return clean JSON to client."""
+    log.error("Unhandled API error", exc_info=True)
+    code = getattr(exc, "code", 500)
+    raw = getattr(exc, "message", None) or str(exc)
+    message = _sanitize_error_message(raw)
+    if not message:
+        message = type(exc).__name__
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "success": False,
+            "error": message,
+            "type": exc.__class__.__name__,
+        }), code
+    return {"error": message}, code
+
 PROVIDER_CATALOG = {
     "openrouter": {
         "name": "OpenRouter (Free)",
@@ -323,7 +355,7 @@ def api_config_save():
         _save_config(data)
         return jsonify({"success": True})
     except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)}), 500
+        return jsonify({"success": False, "error": getattr(exc, "message", None) or str(exc)}), 500
 
 
 @app.route("/api/personality/list")
@@ -384,7 +416,7 @@ def api_personality_create():
             }
         )
     except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)}), 500
+        return jsonify({"success": False, "error": getattr(exc, "message", None) or str(exc)}), 500
 
 
 @app.route("/api/personality/<personality_id>")
@@ -412,7 +444,7 @@ def api_personality_update(personality_id):
             return jsonify({"success": True})
         return jsonify({"success": False, "error": "Custom personality not found"}), 404
     except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)}), 500
+        return jsonify({"success": False, "error": getattr(exc, "message", None) or str(exc)}), 500
 
 
 @app.route("/api/personality/<personality_id>", methods=["DELETE"])
@@ -467,7 +499,7 @@ def api_keys_save():
         return jsonify({"success": True})
     except Exception as exc:
         log.error(f"Failed to write keys to .env: {exc}")
-        return jsonify({"success": False, "error": str(exc)}), 500
+        return jsonify({"success": False, "error": getattr(exc, "message", None) or str(exc)}), 500
 
 
 @app.route("/api/pin/set", methods=["POST"])
@@ -633,7 +665,7 @@ def api_camera_capture():
             return jsonify({"success": True, "image": base64.b64encode(frame).decode(), "format": "jpeg"})
         return jsonify({"success": False, "error": "No frame captured"})
     except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)})
+        return jsonify({"success": False, "error": getattr(exc, "message", None) or str(exc)})
 
 
 @app.route("/api/camera/enable", methods=["POST"])
@@ -650,7 +682,7 @@ def api_camera_enable():
         _save_config(config)
         return jsonify({"success": True})
     except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)})
+        return jsonify({"success": False, "error": getattr(exc, "message", None) or str(exc)})
 
 
 # ── System Info ────────────────────────────────────────────────
@@ -678,7 +710,7 @@ def api_system_info():
             }
         )
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": getattr(exc, "message", None) or type(exc).__name__}), 500
 
 
 @app.route("/api/system/stats")
@@ -702,7 +734,7 @@ def api_system_stats():
             }
         )
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": getattr(exc, "message", None) or type(exc).__name__}), 500
 
 
 # ── Alerts ─────────────────────────────────────────────────────
@@ -718,7 +750,7 @@ def api_alerts():
         alerts = detector.get_alert_history()
         return jsonify({"alerts": alerts})
     except Exception as exc:
-        return jsonify({"alerts": [], "error": str(exc)})
+        return jsonify({"alerts": [], "error": getattr(exc, "message", None) or type(exc).__name__})
 
 
 @app.route("/api/alerts/clear", methods=["POST"])
@@ -732,7 +764,7 @@ def api_alerts_clear():
         detector.clear_alerts()
         return jsonify({"success": True})
     except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)})
+        return jsonify({"success": False, "error": getattr(exc, "message", None) or str(exc)})
 
 
 # ── Main ───────────────────────────────────────────────────────

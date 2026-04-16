@@ -33,15 +33,6 @@ class Config:
                 "offline_model": "phi-3.5-mini-instruct-q4_k_m.gguf",
                 "ollama_url": "http://localhost:11434",
             },
-            # API Keys
-            "api_keys": {
-                "openai": os.getenv("OPENAI_API_KEY", ""),
-                "anthropic": os.getenv("ANTHROPIC_API_KEY", ""),
-                "google": os.getenv("GOOGLE_API_KEY", ""),
-                "deepseek": os.getenv("DEEPSEEK_API_KEY", ""),
-                "openrouter": os.getenv("OPENROUTER_API_KEY", ""),
-                "elevenlabs": os.getenv("ELEVENLABS_API_KEY", ""),
-            },
             # Personality
             "personality": {
                 "current": "assistant",
@@ -94,7 +85,17 @@ class Config:
             "first_run": True,
             "setup_complete": False,
         }
-        
+
+        # Private secrets — NEVER saved to disk
+        self._secrets: Dict[str, str] = {
+            "openai": os.getenv("OPENAI_API_KEY", ""),
+            "anthropic": os.getenv("ANTHROPIC_API_KEY", ""),
+            "google": os.getenv("GOOGLE_API_KEY", ""),
+            "deepseek": os.getenv("DEEPSEEK_API_KEY", ""),
+            "openrouter": os.getenv("OPENROUTER_API_KEY", ""),
+            "elevenlabs": os.getenv("ELEVENLABS_API_KEY", ""),
+        }
+
     def load(self):
         """Load configuration from file"""
         if self.config_file.exists():
@@ -143,11 +144,14 @@ class Config:
         data[keys[-1]] = value
         
     def get_api_key(self, provider: str) -> str:
-        """Get API key for provider"""
-        return self.data.get("api_keys", {}).get(provider, "")
-    
+        """Get API key for provider. Checks _secrets (runtime) then env vars. Never from disk."""
+        key = self._secrets.get(provider, "")
+        if not key:
+            key = os.getenv(f"{provider.upper()}_API_KEY", "")
+        return key
+
     def has_api_key(self, provider: str) -> bool:
-        """Check if API key exists for provider"""
+        """Check if API key exists (from env vars only)"""
         key = self.get_api_key(provider)
         return bool(key and key.strip())
     

@@ -427,43 +427,40 @@ def api_providers():
     return jsonify(_build_provider_catalog(_load_config()))
 
 
+def _write_keys_to_env(keys: dict) -> None:
+    """Write API keys to .env file — never to config.json"""
+    env_path = Path(__file__).parent.parent / ".env"
+    existing = {}
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if "=" in line and not line.strip().startswith("#"):
+                k, v = line.split("=", 1)
+                existing[k.strip()] = v.strip()
+
+    for provider, key in keys.items():
+        env_name = f"{provider.upper()}_API_KEY"
+        existing[env_name] = key
+
+    with open(env_path, "w") as f:
+        for k, v in existing.items():
+            f.write(f"{k}={v}\n")
+    log.info(f"Updated {len(keys)} key(s) in .env")
+
+
 @app.route("/api/keys/save", methods=["POST"])
 def api_keys_save():
-    """Save API keys from setup wizard."""
+    """Save API keys to .env file"""
     data = request.get_json(silent=True) or {}
     keys = data.get("keys", {})
     if not isinstance(keys, dict):
         return jsonify({"success": False, "error": "Invalid key payload"}), 400
 
-    config = _load_config()
-    config.setdefault("api_keys", {})
-    config.setdefault("ai", {})
-    config.setdefault("personality", {})
-
-    for provider, key in keys.items():
-        config["api_keys"][provider] = key
-
-    selected_provider = data.get("provider")
-    if selected_provider in PROVIDER_CATALOG:
-        config["ai"]["default_provider"] = selected_provider
-        if selected_provider != "ollama":
-            config["ai"]["online_provider_preference"] = selected_provider
-
-    selected_model = data.get("model")
-    if isinstance(selected_model, str) and selected_model.strip():
-        if selected_provider == "ollama":
-            config["ai"]["offline_model"] = selected_model.strip()
-        else:
-            config["ai"]["model"] = selected_model.strip()
-
-    selected_personality = data.get("personality")
-    if isinstance(selected_personality, str) and selected_personality.strip():
-        config["personality"]["current"] = selected_personality.strip()
-
-    config["first_run"] = False
-    config["setup_complete"] = True
-    _save_config(config)
-    return jsonify({"success": True})
+    try:
+        _write_keys_to_env(keys)
+        return jsonify({"success": True})
+    except Exception as exc:
+        log.error(f"Failed to write keys to .env: {exc}")
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @app.route("/api/mission/bootstrap")

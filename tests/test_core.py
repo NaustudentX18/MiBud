@@ -28,9 +28,11 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(config.get("test.value"), "hello")
         
     def test_api_key_check(self):
+        import os
         from core.config import Config
+        # API keys must come from env vars, not from disk
+        os.environ["OPENAI_API_KEY"] = "sk-test"
         config = Config()
-        config.data["api_keys"] = {"openai": "sk-test"}
         self.assertTrue(config.has_api_key("openai"))
         self.assertFalse(config.has_api_key("anthropic"))
 

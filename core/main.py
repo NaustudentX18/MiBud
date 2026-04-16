@@ -96,23 +96,34 @@ class MiBudApp:
         await self._main_loop()
         
     async def _init_hardware(self):
-        """Initialize hardware components"""
+        """Initialize hardware components with per-subsystem fallbacks"""
+        from core.health import HealthMonitor
+
         log.info("🔧 Initializing hardware...")
-        
+        health = HealthMonitor()
+
+        # Display — optional
         try:
             from hardware.display import Display
-            from hardware.audio import AudioManager
-            from hardware.buttons import ButtonManager
-            from hardware.battery import BatteryManager
-            from hardware.led import LEDManager
-            
             self.display = Display()
             await self.display.initialize()
             await self.display.show_boot_animation()
-            
+        except Exception as e:
+            log.warning(f"📺 Display init failed: {e} — using mock")
+            self.display = self._create_mock_display()
+
+        # Audio — required
+        try:
+            from hardware.audio import AudioManager
             self.audio = AudioManager()
             await self.audio.initialize()
-            
+        except Exception as e:
+            log.error(f"🔊 Audio init failed: {e} — MiBud requires audio")
+            self.audio = None
+
+        # Buttons — optional
+        try:
+            from hardware.buttons import ButtonManager
             self.buttons = ButtonManager()
             self.buttons.set_callbacks(
                 on_short_press=self._on_button_press,
@@ -120,18 +131,37 @@ class MiBudApp:
                 on_press=self._on_button_hold
             )
             await self.buttons.initialize()
-            
+        except Exception as e:
+            log.warning(f"🔘 Buttons init failed: {e}")
+
+        # Battery — optional
+        try:
+            from hardware.battery import BatteryManager
             self.battery = BatteryManager()
             await self.battery.initialize()
-            
+        except Exception as e:
+            log.warning(f"🔋 Battery init failed: {e}")
+
+        # LED — optional
+        try:
+            from hardware.led import LEDManager
             self.led = LEDManager()
             await self.led.initialize()
-            
-            log.info("✅ Hardware initialized")
-            
         except Exception as e:
-            log.warning(f"Hardware init warning: {e}")
-            self.display = self._create_mock_display()
+            log.warning(f"💡 LED init failed: {e}")
+
+        # Run health checks
+        health_results = await health.run_all(
+            audio=self.audio,
+            display=self.display,
+            battery=self.battery
+        )
+        can_proceed, failed = health.can_proceed()
+        if not can_proceed:
+            log.error(f"🔴 Critical hardware missing: {failed}. Cannot proceed.")
+            raise RuntimeError(f"Required hardware not available: {failed}")
+
+        log.info("✅ Hardware initialized")
             
     def _create_mock_display(self):
         """Create a mock display for non-RPi platforms"""
@@ -328,10 +358,12 @@ class MiBudApp:
         log.info(f"🔘 Button hold: {button_id}")
         
     async def shutdown(self):
-        """Graceful shutdown"""
+        """Graceful shutdown — idempotent"""
+        if not self.running:
+            return  # Already shutting down
         log.info("🛑 Shutting down MiBud...")
         self.running = False
-        
+
         try:
             if hasattr(self, 'wake_word') and self.wake_word:
                 await self.wake_word.stop()
@@ -343,27 +375,41 @@ class MiBudApp:
                 self._web_task.cancel()
         except Exception as e:
             log.error(f"Shutdown error: {e}")
-            
+
         log.info("👋 MiBud stopped")
 
 
 async def main():
     """Main entry point"""
     app = MiBudApp()
-    
+
+    # Thread-safe shutdown flag
+    import threading
+    shutdown_event = threading.Event()
+
     def signal_handler(sig, frame):
-        log.info("Received interrupt signal")
-        if app.running:
-            asyncio.create_task(app.shutdown())
-            
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
+        """Sync signal handler — sets an event that the loop checks"""
+        log.info(f"Received signal {sig.name} — initiating shutdown")
+        shutdown_event.set()
+
+    old_handlers = {
+        signal.SIGINT: signal.signal(signal.SIGINT, signal_handler),
+        signal.SIGTERM: signal.signal(signal.SIGTERM, signal_handler),
+    }
+
     try:
         await app.initialize()
+        # Main loop checks shutdown_event instead of app.running
+        while not shutdown_event.is_set():
+            await asyncio.sleep(0.5)
+        await app.shutdown()
     except Exception as e:
         log.error(f"Fatal error: {e}")
         sys.exit(1)
+    finally:
+        # Restore original handlers
+        for sig, handler in old_handlers.items():
+            signal.signal(sig, handler)
 
 
 if __name__ == "__main__":

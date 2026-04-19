@@ -15,6 +15,7 @@ from urllib import error as urlerror
 from urllib import request as urlrequest
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from web.api_v2 import register_v2 as _register_v2_api
 from web.auth import require_auth
 
 log = logging.getLogger("MiBud")
@@ -22,6 +23,9 @@ log = logging.getLogger("MiBud")
 # Create Flask app
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.urandom(24)
+
+# v2 endpoints (memory, tools, power, streaming chat)
+_register_v2_api(app)
 
 
 def _sanitize_error_message(message: str) -> str:

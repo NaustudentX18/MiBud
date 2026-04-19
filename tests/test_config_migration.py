@@ -43,11 +43,13 @@ def test_migration_adds_tuning_on_old_config(tmp_path, monkeypatch):
         cfg.config_dir = tmp_path
         cfg.load()
 
-        # Migration should have added 'tuning' section
+        # Migration should have added 'tuning' section and advanced the
+        # schema to the current target version.
         assert "tuning" in cfg.data, \
             f"Migration should add 'tuning' section. Got keys: {list(cfg.data.keys())}"
-        assert cfg.data.get("config_version") == 1, \
-            f"config_version should be 1 after migration, got {cfg.data.get('config_version')}"
+        current_target = Config().data.get("config_version")
+        assert cfg.data.get("config_version") == current_target, \
+            f"config_version should be {current_target} after migration, got {cfg.data.get('config_version')}"
     finally:
         core.config.Config.save = orig_save
 

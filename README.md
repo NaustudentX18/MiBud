@@ -85,6 +85,31 @@ bash scripts/first_boot_check.sh
 
 ---
 
+## 🆕 What's new in v2.0
+
+MiBud just got a lot smarter on the same 512 MB of RAM:
+
+- 🧠 **Long-term memory** — remembers your name, preferences, routines, and past
+  conversations in a local SQLite store. Semantic recall is a single numpy
+  matmul, so it's still fast on a Pi Zero 2 W. Auto-upgrades to Ollama
+  `nomic-embed-text` when available; falls back to a zero-dep hashing embedder.
+- 🛠️ **Tool use** — MiBud can now actually *do* things. Set timers, create
+  reminders, take photos, describe what it sees, search the web, trigger Home
+  Assistant, toggle GPIO, read its own battery — all via LLM function calls.
+- 🗣️ **Streaming TTS** — first word leaves the speaker in under a second by
+  splitting tokens into sentences and starting TTS before the model is done.
+- 🔋 **Power profiles** — automatic ECO / BALANCED / PERFORMANCE switching
+  based on battery and charge state. Brightness, poll rates, and LLM token
+  budgets all follow.
+- 🔔 **Proactive engine** — low-battery announcements, reminder/timer firing,
+  morning greeting, idle check-ins — all respecting quiet hours and busy state.
+- 🛡️ **Hardened AI router** — per-provider circuit breaker, exponential backoff
+  retries, cached connectivity probe, moving-average latency metrics.
+- 🌐 **Web API v2** — SSE streaming chat, memory inspection/wipe, tool
+  invocation, power control, unified `/api/health`.
+
+---
+
 ## ✨ Features
 
 ### 🤖 AI Companionship
@@ -194,6 +219,8 @@ Or set API keys via environment variables — copy `.env.example` to `.env`.
 
 ## 🌐 Web API (Quick Reference)
 
+### v1 (stable)
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/status` | GET | System state, battery, personality |
@@ -203,6 +230,25 @@ Or set API keys via environment variables — copy `.env.example` to `.env`.
 | `/api/camera/capture` | GET | Capture image from camera |
 | `/api/system/info` | GET | CPU, RAM, storage |
 | `/api/alerts` | GET | Anomaly alert history |
+
+### v2 (new in 2.0)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Unified subsystem health (no auth) |
+| `/api/chat/stream` | POST | SSE streaming chat |
+| `/api/memory/stats` | GET | Memory counters + session id |
+| `/api/memory/facts` | GET | List durable facts |
+| `/api/memory/search` | POST | Semantic recall across memory |
+| `/api/memory/fact` | POST / DELETE | Add / delete fact |
+| `/api/memory/profile` | GET / POST | Structured user profile |
+| `/api/memory/sessions` | GET | Recent session summaries |
+| `/api/memory/wipe` | POST | Nuke all memory (requires confirm) |
+| `/api/tools/list` | GET | Registered tool schemas |
+| `/api/tools/invoke` | POST | Call a tool directly |
+| `/api/power/status` | GET | Current power profile |
+| `/api/power/profile` | POST | Switch profile (auto / eco / balanced / performance) |
+| `/api/providers/health` | GET | Circuit-breaker + latency metrics |
 
 ---
 

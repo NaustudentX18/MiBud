@@ -80,9 +80,43 @@ class Config:
                 "enable_speaker_recognition": False,
                 "enable_anomaly_detection": False,
                 "enable_multi_device_sync": False,
+                # v2 additions
+                "enable_memory": True,
+                "enable_tools": True,
+                "enable_streaming": True,
+                "enable_proactive": True,
+                "enable_power_manager": True,
+            },
+            # Long-term memory
+            "memory": {
+                "embedder": "auto",                    # auto | hash | ollama
+                "ollama_embed_model": "nomic-embed-text",
+                "hash_dim": 256,
+                "db_path": "data/memory.db",
+                "recall_k": 4,
+            },
+            # Proactive engine
+            "proactive": {
+                "battery_enabled": True,
+                "reminders_enabled": True,
+                "timers_enabled": True,
+                "anomaly_enabled": True,
+                "idle_checkin_enabled": False,
+                "idle_checkin_minutes": 30,
+                "morning_greeting_enabled": False,
+                "morning_greeting_hour": 7,
+                "quiet_hours_start": 23,
+                "quiet_hours_end": 7,
+            },
+            # Power profiles
+            "power": {
+                "auto": True,
+                "eco_below_percent": 25,
+                "performance_on_charge": True,
+                "manual_profile": "balanced",          # eco | balanced | performance
             },
             # Schema version for migrations
-            "config_version": 1,
+            "config_version": 2,
             # First run tracking
             "first_run": True,
             "setup_complete": False,
@@ -127,10 +161,16 @@ class Config:
     def _migrate(self, saved: Dict[str, Any]) -> Dict[str, Any]:
         """Run migrations from older config versions"""
         version = saved.get("config_version", 0)
-        while version < self.data.get("config_version", 1):
+        target = self.data.get("config_version", 2)
+        while version < target:
             if version == 0:
                 saved = self._migrate_v0_to_v1(saved)
                 version = 1
+            elif version == 1:
+                saved = self._migrate_v1_to_v2(saved)
+                version = 2
+            else:
+                break
         return saved
 
     def _migrate_v0_to_v1(self, saved: Dict[str, Any]) -> Dict[str, Any]:
@@ -138,6 +178,20 @@ class Config:
         if "tuning" not in saved:
             saved["tuning"] = dict(self.data["tuning"])
         saved["config_version"] = 1
+        return saved
+
+    def _migrate_v1_to_v2(self, saved: Dict[str, Any]) -> Dict[str, Any]:
+        """v1 → v2: add memory, proactive, power, and new feature flags."""
+        features = saved.setdefault("features", {})
+        for k, v in self.data["features"].items():
+            features.setdefault(k, v)
+        for section in ("memory", "proactive", "power"):
+            if section not in saved:
+                saved[section] = dict(self.data[section])
+            else:
+                for k, v in self.data[section].items():
+                    saved[section].setdefault(k, v)
+        saved["config_version"] = 2
         return saved
                 
     def save(self):

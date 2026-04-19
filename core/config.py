@@ -86,6 +86,12 @@ class Config:
                 "enable_streaming": True,
                 "enable_proactive": True,
                 "enable_power_manager": True,
+                # v3 additions
+                "enable_plugins": False,      # user-owned code; opt-in
+                "enable_mcp": False,          # external MCP servers; opt-in
+                "enable_trace": True,
+                "enable_barge_in": True,
+                "enable_continuous_dialog": False,
             },
             # Long-term memory
             "memory": {
@@ -115,8 +121,33 @@ class Config:
                 "performance_on_charge": True,
                 "manual_profile": "balanced",          # eco | balanced | performance
             },
+            # v3: structured conversation trace
+            "trace": {
+                "path": "data/trace.log",
+                "max_bytes": 1 << 20,         # 1 MiB before rotation
+                "keep_recent": 200,
+            },
+            # v3: user-dropped Python plugins
+            "plugins": {
+                "dir": "plugins",
+            },
+            # v3: external MCP servers (list of {name, command, args, env, enabled})
+            "mcp": {
+                "servers": [],
+            },
+            # v3: dialog session tuning
+            "dialog": {
+                "continuous": False,
+                "continuous_window_s": 8.0,
+            },
+            # v3: VAD backend selection
+            "vad": {
+                "backend": "auto",            # auto | rms | silero
+                "silero_model_path": "data/silero_vad.onnx",
+                "rms_threshold": 500,
+            },
             # Schema version for migrations
-            "config_version": 2,
+            "config_version": 3,
             # First run tracking
             "first_run": True,
             "setup_complete": False,
@@ -161,7 +192,7 @@ class Config:
     def _migrate(self, saved: Dict[str, Any]) -> Dict[str, Any]:
         """Run migrations from older config versions"""
         version = saved.get("config_version", 0)
-        target = self.data.get("config_version", 2)
+        target = self.data.get("config_version", 3)
         while version < target:
             if version == 0:
                 saved = self._migrate_v0_to_v1(saved)
@@ -169,6 +200,9 @@ class Config:
             elif version == 1:
                 saved = self._migrate_v1_to_v2(saved)
                 version = 2
+            elif version == 2:
+                saved = self._migrate_v2_to_v3(saved)
+                version = 3
             else:
                 break
         return saved
@@ -192,6 +226,20 @@ class Config:
                 for k, v in self.data[section].items():
                     saved[section].setdefault(k, v)
         saved["config_version"] = 2
+        return saved
+
+    def _migrate_v2_to_v3(self, saved: Dict[str, Any]) -> Dict[str, Any]:
+        """v2 → v3: add trace, plugins, mcp, dialog, vad sections + v3 feature flags."""
+        features = saved.setdefault("features", {})
+        for k, v in self.data["features"].items():
+            features.setdefault(k, v)
+        for section in ("trace", "plugins", "mcp", "dialog", "vad"):
+            if section not in saved:
+                saved[section] = dict(self.data[section])
+            else:
+                for k, v in self.data[section].items():
+                    saved[section].setdefault(k, v)
+        saved["config_version"] = 3
         return saved
                 
     def save(self):

@@ -38,6 +38,12 @@ class ServiceLocator:
     ai_router: Any = None
     power_manager: Any = None
     tool_registry: Any = None
+    # v3 additions
+    trace_log: Any = None
+    backup_manager: Any = None
+    plugin_loader: Any = None
+    mcp_manager: Any = None
+    dialog_session: Any = None
 
 
 _services = ServiceLocator()
@@ -339,6 +345,27 @@ def unified_health():
             out["subsystems"]["tools"] = {"count": len(_services.tool_registry.names())}
         except Exception:
             pass
+    if _services.trace_log is not None:
+        try:
+            out["subsystems"]["trace"] = _services.trace_log.stats()
+        except Exception:
+            pass
+    if _services.mcp_manager is not None:
+        try:
+            out["subsystems"]["mcp"] = {
+                "servers": len(_services.mcp_manager.servers),
+            }
+        except Exception:
+            pass
+    if _services.plugin_loader is not None:
+        try:
+            plugins = _services.plugin_loader.loaded
+            out["subsystems"]["plugins"] = {
+                "loaded": sum(1 for p in plugins.values() if p.ok),
+                "total": len(plugins),
+            }
+        except Exception:
+            pass
     return jsonify(out)
 
 
@@ -385,6 +412,151 @@ def chat_stream():
         yield "data: [DONE]\n\n"
 
     return Response(_iter(), mimetype="text/event-stream")
+
+
+# ---------------------------------------------------------------------------
+# v3 endpoints — trace, backup, plugins, mcp, dialog
+# ---------------------------------------------------------------------------
+
+
+@api_v2.route("/api/v3/trace", methods=["GET"])
+@require_auth
+def v3_trace():
+    """Return the tail of the conversation trace log.
+
+    Query params: ?limit=50 (default 50, max 500).
+    """
+    tl = _services.trace_log
+    if tl is None:
+        return jsonify({"success": False, "error": "trace not available"}), 503
+    try:
+        limit = max(1, min(int(request.args.get("limit", "50")), 500))
+    except (TypeError, ValueError):
+        limit = 50
+    return jsonify({
+        "success": True,
+        "stats": tl.stats(),
+        "entries": tl.recent(limit=limit),
+    })
+
+
+@api_v2.route("/api/v3/backup", methods=["POST"])
+@require_auth
+def v3_backup_create():
+    """Export a tar.gz backup. Body: {"path": "optional/abs/path"}."""
+    bm = _services.backup_manager
+    if bm is None:
+        return jsonify({"success": False, "error": "backup not available"}), 503
+    payload = request.get_json(silent=True) or {}
+    import time as _time
+    from pathlib import Path as _Path
+    default_name = f"mibud-backup-{int(_time.time())}.tar.gz"
+    dest = _Path(payload.get("path") or ("data/backups/" + default_name))
+    try:
+        info = bm.export(dest)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    return jsonify({"success": True, "backup": info.__dict__})
+
+
+@api_v2.route("/api/v3/backup/restore", methods=["POST"])
+@require_auth
+def v3_backup_restore():
+    """Restore from an existing backup.
+
+    Body: {"path": "/abs/path/to/backup.tar.gz", "force": false}.
+    A running instance won't reload live state — callers should restart the
+    service after a successful restore.
+    """
+    bm = _services.backup_manager
+    if bm is None:
+        return jsonify({"success": False, "error": "backup not available"}), 503
+    payload = request.get_json(silent=True) or {}
+    path = payload.get("path")
+    if not path:
+        return jsonify({"success": False, "error": "path is required"}), 400
+    force = bool(payload.get("force", False))
+    try:
+        manifest = bm.restore(path, force=force)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({
+        "success": True,
+        "manifest": manifest,
+        "note": "restart the service to reload restored state",
+    })
+
+
+@api_v2.route("/api/v3/backup/inspect", methods=["GET"])
+@require_auth
+def v3_backup_inspect():
+    bm = _services.backup_manager
+    if bm is None:
+        return jsonify({"success": False, "error": "backup not available"}), 503
+    path = request.args.get("path")
+    if not path:
+        return jsonify({"success": False, "error": "path is required"}), 400
+    try:
+        manifest = bm.inspect(path)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "manifest": manifest})
+
+
+@api_v2.route("/api/v3/plugins", methods=["GET"])
+@require_auth
+def v3_plugins_list():
+    pl = _services.plugin_loader
+    if pl is None:
+        return jsonify({"success": False, "error": "plugins not available"}), 503
+    return jsonify({
+        "success": True,
+        "plugins": [p.__dict__ for p in pl.loaded.values()],
+    })
+
+
+@api_v2.route("/api/v3/plugins/reload", methods=["POST"])
+@require_auth
+def v3_plugins_reload():
+    pl = _services.plugin_loader
+    if pl is None:
+        return jsonify({"success": False, "error": "plugins not available"}), 503
+    results = pl.load_all()
+    return jsonify({"success": True, "plugins": [p.__dict__ for p in results]})
+
+
+@api_v2.route("/api/v3/mcp", methods=["GET"])
+@require_auth
+def v3_mcp_status():
+    mm = _services.mcp_manager
+    if mm is None:
+        return jsonify({"success": False, "error": "mcp not available"}), 503
+    return jsonify({"success": True, "servers": mm.status()})
+
+
+@api_v2.route("/api/v3/dialog", methods=["GET"])
+@require_auth
+def v3_dialog_status():
+    ds = _services.dialog_session
+    if ds is None:
+        return jsonify({"success": False, "error": "dialog not available"}), 503
+    return jsonify({
+        "success": True,
+        "state": ds.state.value,
+        "continuous": ds.continuous,
+        "stats": ds.stats(),
+    })
+
+
+@api_v2.route("/api/v3/dialog/continuous", methods=["POST"])
+@require_auth
+def v3_dialog_continuous():
+    ds = _services.dialog_session
+    if ds is None:
+        return jsonify({"success": False, "error": "dialog not available"}), 503
+    payload = request.get_json(silent=True) or {}
+    ds.set_continuous(bool(payload.get("enabled", True)))
+    return jsonify({"success": True, "continuous": ds.continuous})
 
 
 def register_v2(app) -> None:

@@ -4,7 +4,58 @@ All notable changes to MiBud will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased] - v2.0.0
+## [Unreleased] - v3.0.0 "Aware"
+
+Extensibility, natural conversation, and field-readiness on top of v2.
+
+### Added
+- **Dialog session (`core/dialog.py`)** — a proper turn-level state machine
+  (IDLE → LISTENING → THINKING → SPEAKING) with first-class **barge-in**:
+  perception can call `session.barge_in()` while the assistant is speaking,
+  which sets a cancel event the TTS layer honours and drops straight back
+  into LISTENING without needing another wake word. **Continuous mode** keeps
+  the mic open for a tunable window after each turn.
+- **MCP client (`ai/mcp_client.py`)** — a minimal Model Context Protocol
+  client over stdio. Spawns MCP servers as subprocesses, performs the
+  initialize/tools-list/tools-call handshake, and proxies every discovered
+  tool into MiBud's `ToolRegistry` so the LLM can use them transparently.
+  Name-spaced as `mcp_<server>_<tool>` to avoid collisions with built-ins.
+- **Plugin loader (`ai/plugins.py`)** — drop a `.py` file in `plugins/`,
+  decorate functions with `@tool`, and they become callable by the LLM on
+  next reload. Each plugin imports in its own namespace; failures are
+  isolated. Opt-in via `features.enable_plugins`.
+- **Backup/restore (`core/backup.py`)** — tar.gz export of config, memory
+  DB (via SQLite backup API for a consistent snapshot), personalities, and
+  plugins. Restore is path-traversal-safe, rejects newer schemas without
+  `force=True`, and excludes `.env`/secret suffixes. Atomic via temp+rename.
+- **Silero VAD adapter (`ai/vad.py`)** — pluggable VAD with an onnxruntime
+  Silero backend (~2 MB model, <1 % CPU on Pi Zero 2 W) and automatic
+  fallback to a hysteretic RMS detector when the model or runtime isn't
+  available. Python-3.13-safe (no hard audioop dep).
+- **Conversation trace log (`ai/trace.py`)** — structured JSONL per-turn
+  log with rotation, ring buffer for recent entries, and `/api/v3/trace`
+  endpoint for inspection. Tracks listen/think/speak latencies, tool calls,
+  barge-ins, provider/model.
+- **Web API v3 endpoints** — `/api/v3/trace`, `/api/v3/backup`,
+  `/api/v3/backup/restore`, `/api/v3/backup/inspect`, `/api/v3/plugins`,
+  `/api/v3/plugins/reload`, `/api/v3/mcp`, `/api/v3/dialog`,
+  `/api/v3/dialog/continuous`. All under the same auth as v2. `/api/health`
+  now reports trace/plugin/mcp subsystem state too.
+- **Config v3 schema** — adds `trace`, `plugins`, `mcp`, `dialog`, `vad`
+  sections plus feature flags: `enable_plugins`, `enable_mcp`,
+  `enable_trace`, `enable_barge_in`, `enable_continuous_dialog`. Migration
+  `_migrate_v2_to_v3` preserves user settings.
+- **44 new tests** — dialog lifecycle + barge-in, trace write/rotate/stats,
+  VAD protocol conformance, plugin isolation, backup atomicity + tarslip
+  guard, real stdio MCP roundtrip with a mock server.
+
+### Changed
+- `core/main.py` now boots trace, backup, plugin, MCP, and dialog
+  subsystems alongside v2 services, binds them into the web API, and stops
+  MCP servers cleanly on shutdown.
+- `core/config.py` bumped to schema version 3 with the v2→v3 migration.
+
+## [v2.0.0]
 
 Major intelligence uplift for MiBud.
 

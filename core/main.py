@@ -64,6 +64,13 @@ class MiBudApp:
         self.note_manager = None
         self.home_automation = None
 
+        # v3 additions
+        self.trace_log = None
+        self.backup_manager = None
+        self.plugin_loader = None
+        self.mcp_manager = None
+        self.dialog_session = None
+
     async def initialize(self):
         log.info("🚀 Initializing MiBud...")
 
@@ -99,6 +106,7 @@ class MiBudApp:
         await self._init_conversation()
         await self._init_power()
         await self._init_proactive()
+        await self._init_v3()
         await self._init_web()
 
         self._setup_event_listeners()
@@ -453,6 +461,84 @@ class MiBudApp:
             next_id = personalities[(idx + 1) % len(personalities)]
             await self.conversation.change_personality(next_id)
 
+    async def _init_v3(self):
+        """Trace, backup, plugins, MCP, dialog session.
+
+        Every subsystem is soft-failure: any issue logs a warning and leaves
+        the subsystem at None, since v3 is strictly additive over v2.
+        """
+        log.info("🧠 Initializing v3 subsystems...")
+
+        try:
+            from ai.trace import TraceLog
+            trace_path = self.config.get("trace.path", "data/trace.log")
+            max_bytes = int(self.config.get("trace.max_bytes", 1 << 20))
+            self.trace_log = TraceLog(path=trace_path, max_bytes=max_bytes)
+        except Exception as e:
+            log.warning(f"trace init failed: {e}")
+
+        try:
+            from core.backup import BackupManager
+            self.backup_manager = BackupManager(root=PROJECT_ROOT.parent)
+        except Exception as e:
+            log.warning(f"backup init failed: {e}")
+
+        if self.config.get("features.enable_plugins", False):
+            try:
+                from ai.plugins import PluginLoader
+                self.plugin_loader = PluginLoader(
+                    plugins_dir=self.config.get("plugins.dir", "plugins")
+                )
+                results = self.plugin_loader.load_all()
+                ok = sum(1 for r in results if r.ok)
+                if results:
+                    log.info(f"🔌 plugins: {ok}/{len(results)} loaded")
+            except Exception as e:
+                log.warning(f"plugin init failed: {e}")
+
+        if self.config.get("features.enable_mcp", False):
+            try:
+                from ai.mcp_client import MCPManager, MCPServerConfig
+                self.mcp_manager = MCPManager()
+                server_cfgs = [
+                    MCPServerConfig.from_dict(c)
+                    for c in (self.config.get("mcp.servers", []) or [])
+                    if isinstance(c, dict)
+                ]
+                if server_cfgs:
+                    await self.mcp_manager.start_all(server_cfgs)
+            except Exception as e:
+                log.warning(f"mcp init failed: {e}")
+
+        try:
+            from core.dialog import DialogSession
+            continuous = bool(self.config.get("dialog.continuous", False))
+            window_s = float(self.config.get("dialog.continuous_window_s", 8.0))
+            hooks = {}
+            if self.trace_log is not None:
+                async def _on_turn(record):
+                    try:
+                        self.trace_log.write_turn(
+                            user_text=record.user_text,
+                            assistant_text=record.assistant_text,
+                            tool_calls=record.tool_calls,
+                            listen_ms=record.listen_ms,
+                            think_ms=record.think_ms,
+                            speak_ms=record.speak_ms,
+                            total_ms=record.total_ms,
+                            barged_in=record.barged_in,
+                        )
+                    except Exception as e:
+                        log.debug(f"trace hook failed: {e}")
+                hooks["on_turn"] = _on_turn
+            self.dialog_session = DialogSession(
+                hooks=hooks,
+                continuous=continuous,
+                continuous_window_s=window_s,
+            )
+        except Exception as e:
+            log.warning(f"dialog init failed: {e}")
+
     async def _init_web(self):
         log.info("🌐 Starting web interface...")
         try:
@@ -465,6 +551,11 @@ class MiBudApp:
                 ai_router=self.ai_router,
                 power_manager=self.power_manager,
                 tool_registry=(self.ai_router._tools if self.ai_router else None),
+                trace_log=self.trace_log,
+                backup_manager=self.backup_manager,
+                plugin_loader=self.plugin_loader,
+                mcp_manager=self.mcp_manager,
+                dialog_session=self.dialog_session,
             )
             self._web_task = asyncio.create_task(asyncio.to_thread(run_server))
             log.info("✅ Web interface ready at http://mibud.local:5000")
@@ -514,6 +605,8 @@ class MiBudApp:
         try:
             if self.proactive is not None:
                 await self.proactive.stop()
+            if self.mcp_manager is not None:
+                await self.mcp_manager.stop_all()
             if self.power_manager is not None:
                 await self.power_manager.stop()
             if self.wake_word is not None:

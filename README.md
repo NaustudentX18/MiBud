@@ -85,6 +85,32 @@ bash scripts/first_boot_check.sh
 
 ---
 
+## 🆕 What's new in v3.0 "Aware"
+
+v3 focuses on the three things v2 didn't fully deliver — natural conversation,
+a real extensibility story, and field-ready resilience:
+
+- 🗣️ **Barge-in + continuous dialog** — interrupt the assistant mid-sentence
+  and the mic re-opens immediately; follow-up questions land in the same
+  conversation window without re-saying the wake word.
+- 🔌 **MCP client** — point MiBud at any Model Context Protocol server
+  (stdio subprocess) and its tools auto-register into the LLM's tool
+  catalogue, namespaced so nothing collides with the built-ins.
+- 🧩 **Plugin loader** — drop a `.py` file in `plugins/` with `@tool`
+  decorators and the LLM can call it on next reload. Each plugin imports
+  in isolation so one bad file won't brick boot.
+- 💾 **Backup / restore** — one-call tar.gz export of config, memory DB
+  (consistent SQLite snapshot), personalities, and plugins. Restore is
+  path-traversal-safe and atomic.
+- 🎙️ **Silero VAD** — when the optional 2 MB ONNX model is present MiBud
+  swaps in a real neural VAD; otherwise it keeps the hysteretic RMS
+  detector. Both behind a common `VoiceActivityDetector` protocol.
+- 📜 **Conversation trace** — JSONL per-turn log with rotation, surfaced
+  through `/api/v3/trace`. Tracks listen/think/speak latencies, tool calls,
+  and barge-ins for latency debugging.
+
+---
+
 ## 🆕 What's new in v2.0
 
 MiBud just got a lot smarter on the same 512 MB of RAM:
@@ -249,6 +275,20 @@ Or set API keys via environment variables — copy `.env.example` to `.env`.
 | `/api/power/status` | GET | Current power profile |
 | `/api/power/profile` | POST | Switch profile (auto / eco / balanced / performance) |
 | `/api/providers/health` | GET | Circuit-breaker + latency metrics |
+
+### v3 (new in 3.0)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v3/trace` | GET | Recent per-turn trace entries + stats (`?limit=N`) |
+| `/api/v3/backup` | POST | Export tar.gz of full device state |
+| `/api/v3/backup/inspect` | GET | Read a backup manifest without extracting |
+| `/api/v3/backup/restore` | POST | Restore from a backup (service restart required) |
+| `/api/v3/plugins` | GET | List loaded plugins + per-plugin status |
+| `/api/v3/plugins/reload` | POST | Rescan `plugins/` and re-import |
+| `/api/v3/mcp` | GET | Status of every configured MCP server |
+| `/api/v3/dialog` | GET | Current dialog state, continuous mode, turn/barge-in counts |
+| `/api/v3/dialog/continuous` | POST | Enable/disable continuous conversation |
 
 ---
 

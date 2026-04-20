@@ -655,5 +655,10 @@ async def main():
             signal.signal(sig, handler)
 
 
-if __name__ == "__main__":
+def run() -> None:
+    """Synchronous entry point used by the ``mibud`` console script."""
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    run()

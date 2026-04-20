@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Question or general help
+    url: https://github.com/NaustudentX18/MiBud/discussions
+    about: Use Discussions for setup questions, hardware advice, and general help.
+  - name: 🛡️ Report a security vulnerability
+    url: https://github.com/NaustudentX18/MiBud/security/advisories/new
+    about: Open a private security advisory — please do NOT file a public issue.
+  - name: 📖 Hardware setup docs
+    url: https://github.com/NaustudentX18/MiBud/blob/main/docs/HARDWARE.md
+    about: Pin maps, driver setup, HAT wiring.

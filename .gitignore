@@ -138,8 +138,8 @@ pisugar.json
 logs/
 config/profiles/
 
-# Assets (binary files managed externally)
-assets/*.png
+# Assets — README screenshots from assets/generate.py are tracked so they
+# render on github.com. Large/external binaries (gifs, photos) stay ignored.
 assets/*.jpg
 assets/*.jpeg
 assets/*.gif

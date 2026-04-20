@@ -1,0 +1,160 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mibud"
+version = "3.0.0"
+description = "Privacy-focused AI companion for the Raspberry Pi Zero 2 W"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "MiBud contributors" }]
+keywords = ["raspberry-pi", "ai", "assistant", "privacy", "voice", "llm", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Home Automation",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Runtime dependencies that must be present on any platform. Hardware-specific
+# packages (RPi.GPIO, picamera2, spidev, pyaudio, pyalsaaudio, piper-tts, etc.)
+# live in the [project.optional-dependencies] `pi` extra because they cannot
+# build on most developer machines or in CI.
+dependencies = [
+    "aiohttp>=3.9.0",
+    "flask>=3.0.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "python-dateutil>=2.8.0",
+    "psutil>=5.9.0",
+    "numpy>=1.24.0",
+    "Pillow>=10.0.0",
+    "zeroconf>=0.130.0",
+]
+
+[project.optional-dependencies]
+# Cloud LLM providers — install what you use.
+cloud = [
+    "openai>=1.10.0",
+    "anthropic>=0.20.0",
+    "google-generativeai>=0.5.0",
+]
+
+# Offline LLM + STT stack.
+offline = [
+    "ollama>=0.1.0",
+    "llama-cpp-python>=0.3.0",
+    "faster-whisper>=1.0.0",
+    "vosk>=0.3.47",
+]
+
+# Silero ONNX VAD backend. Falls back to RMS VAD if unavailable.
+vad = [
+    "onnxruntime>=1.17.0",
+]
+
+# Hardware + audio packages for the Raspberry Pi target. These require
+# system libraries (portaudio19-dev, libasound2-dev, libgpiod-dev, etc.)
+# installed via scripts/setup.sh on the device.
+pi = [
+    "pyaudio>=0.2.14",
+    "pyalsaaudio>=0.11.0",
+    "scipy>=1.11.0",
+    "RPi.GPIO>=0.7.1",
+    "smbus2>=0.4.0",
+    "spidev>=3.6",
+    "picamera2>=0.3.0",
+    "opencv-python>=4.9.0",
+    "piper-tts>=1.2.0",
+]
+
+# Everything except the hardware extras — useful for a laptop-side install.
+full = [
+    "mibud[cloud,offline,vad]",
+]
+
+# Development and test tooling.
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+    "build>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/NaustudentX18/MiBud"
+Changelog = "https://github.com/NaustudentX18/MiBud/blob/main/CHANGELOG.md"
+Issues = "https://github.com/NaustudentX18/MiBud/issues"
+
+[project.scripts]
+mibud = "core.main:run"
+
+[tool.hatch.build.targets.wheel]
+# Flat-layout: ship each top-level package as-is. This mirrors how the code
+# imports (e.g. `from ai.tools import ...`) without needing a refactor.
+packages = [
+    "ai",
+    "core",
+    "hardware",
+    "home",
+    "personalities",
+    "sync",
+    "utils",
+    "web",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"deploy/mibud.service" = "share/mibud/mibud.service"
+"scripts/setup.sh" = "share/mibud/setup.sh"
+"scripts/run.sh" = "share/mibud/run.sh"
+"scripts/first_boot_check.sh" = "share/mibud/first_boot_check.sh"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/ai",
+    "/core",
+    "/hardware",
+    "/home",
+    "/personalities",
+    "/sync",
+    "/utils",
+    "/web",
+    "/config",
+    "/deploy",
+    "/scripts",
+    "/tests",
+    "/docs",
+    "/requirements.txt",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+    "/CODE_OF_CONDUCT.md",
+    "/CONTRIBUTING.md",
+    "/AGENTS.md",
+]
+exclude = [
+    "**/__pycache__",
+    "**/*.pyc",
+    ".env",
+    "data/*.db",
+    "logs/",
+    "packages/",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+testpaths = ["tests"]

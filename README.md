@@ -1,20 +1,28 @@
 <div align="center">
 
-# 🌱 MiBud
+<img src="assets/banner.png" alt="MiBud — Privacy-First AI Companion" />
 
-### *Your Privacy-First AI Companion — Pocket-Sized and Always With You*
+<p>
+  <a href="https://github.com/NaustudentX18/MiBud/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/NaustudentX18/MiBud/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/NaustudentX18/MiBud/releases"><img alt="Version" src="https://img.shields.io/badge/version-3.0.0-22c55e?logo=semantic-release&logoColor=white" /></a>
+  <img alt="Tests" src="https://img.shields.io/badge/tests-154%20passing-22c55e?logo=pytest&logoColor=white" />
+  <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" />
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Pi%20Zero%202%20W-c51a4a?logo=raspberry-pi&logoColor=white" />
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-3b82f6" />
+  <img alt="Status" src="https://img.shields.io/badge/status-beta-f59e0b" />
+</p>
 
-[![CI](https://github.com/NaustudentX18/MiBud/actions/workflows/ci.yml/badge.svg)](https://github.com/NaustudentX18/MiBud/actions/workflows/ci.yml)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20Zero%202%20W-c51a4a?logo=raspberry-pi&logoColor=white)
-![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-22c55e)
-![Status](https://img.shields.io/badge/status-beta-f59e0b)
+<p><b>Pocket-sized. Always with you. Yours.</b></p>
 
-**MiBud** is a lightweight, privacy-focused AI assistant built for low-power Raspberry Pi deployments.  
-Works **fully offline** with local models — or connects to cloud AI when you want it.  
-Runs on your hardware, stores nothing in the cloud, and puts *you* in control.
-
-[Quick Start](#-quick-start) · [Features](#-features) · [Hardware](#-hardware-target) · [Docs](#-documentation) · [Contributing](#-contributing)
+<p>
+  <a href="#-quick-start">Quick start</a> ·
+  <a href="#-whats-new-in-v30-aware">What's new</a> ·
+  <a href="#-personalities">Personalities</a> ·
+  <a href="#%EF%B8%8F-architecture">Architecture</a> ·
+  <a href="#-web-api">API</a> ·
+  <a href="#-packages">Packages</a> ·
+  <a href="#%EF%B8%8F-roadmap">Roadmap</a>
+</p>
 
 </div>
 
@@ -24,271 +32,246 @@ Runs on your hardware, stores nothing in the cloud, and puts *you* in control.
 
 > **Tiny device. Big personality. Zero compromise on privacy.**
 
-| | |
-|---|---|
-| 🔒 **Privacy First** | 100 % offline mode — your conversations never leave your device |
-| 🧠 **20+ Personalities** | From Chef to Therapist — or build your own via the web UI |
-| 🔋 **Battery-Aware** | Designed for 8+ h portable use with PiSugar 3 |
-| ⚡ **Fast Startup** | Boots to ready in ~20 s on Pi Zero 2 W |
-| 🌐 **Multi-Provider AI** | OpenAI · Anthropic · Google · DeepSeek · OpenRouter · Ollama |
-| 📺 **Beautiful Display** | 240×280 ST7789 with 20+ themes and smooth animations |
+MiBud is a friendly AI companion that fits in your pocket. It runs **fully offline**
+on a Raspberry Pi Zero 2 W with the WhisPlay HAT and a PiSugar 3 battery — and
+falls back to your favourite cloud LLM only when you ask it to. Twenty-plus
+personalities, long-term memory, real tool use, MCP, plugins, streaming TTS,
+barge-in, continuous dialog. All on 512 MB of RAM.
+
+|     |     |
+| --- | --- |
+| 🔒 **Privacy-first** | 100 % offline mode — conversations never leave the device |
+| 🧠 **20+ personalities** | Chef · Therapist · DJ · Hacker · Teacher · Detective … |
+| 🔋 **8–10 h battery** | Power-aware ECO/BALANCED/PERFORMANCE profiles |
+| ⚡ **First word in <1 s** | Streaming sentence TTS — speaks while the LLM thinks |
+| 🌐 **Multi-provider** | OpenAI · Anthropic · Google · DeepSeek · OpenRouter · Ollama |
+| 🎙️ **Real VAD** | Optional Silero ONNX (~2 MB) with RMS fallback |
+| 🔌 **MCP + plugins** | Drop-in Python tools and external MCP servers |
+| 💾 **One-shot backup** | Atomic tar.gz of config, memory DB, plugins, personalities |
 
 ---
 
-## 🧩 Hardware Target
+## 🎬 See it in action
 
-| Component | Model |
-|-----------|-------|
-| 🖥️ SBC | Raspberry Pi Zero 2 W |
-| 🎧 AI HAT | Whisplay AI HAT (ST7789 display + WM8960 audio) |
-| 🔋 Battery | PiSugar 3 (1200 mAh, I²C management) |
+<div align="center">
 
-> See [docs/HARDWARE.md](docs/HARDWARE.md) for the full pin-map and driver setup guide.
+<img src="assets/states.png" alt="Dialog state machine — IDLE / LISTENING / THINKING / SPEAKING" width="100%" />
+
+<sub>The four states of every turn: idle clock, live mic with VAD bars, model + tool inflight indicator, streaming response with barge-in hint.</sub>
+
+</div>
 
 ---
 
-## 🚀 Quick Start
+## 🎭 Personalities
 
-### 1 — Clone and install
+<div align="center">
+
+<img src="assets/personalities.png" alt="A grid of MiBud personalities with their themes" width="100%" />
+
+</div>
+
+Switch personalities live from the dashboard, the API, or by voice
+(`"MiBud, switch to Chef"`). Each one ships with its own:
+
+- **Theme** — display colours, accent, secondary
+- **Voice** — speed, pitch, style hint passed to TTS
+- **System prompt** — tuned for that personality's domain
+- **Capabilities** — which built-in tools are surfaced
+
+Build your own from the web UI in under a minute, or drop a JSON file in
+`config/profiles/` for full control.
+
+---
+
+## ✅ Tested. End-to-end.
+
+<div align="center">
+
+<img src="assets/tests.png" alt="pytest output: 154 tests passing" width="80%" />
+
+<sub><b>154 tests</b> covering memory, tools, streaming, dialog, MCP, plugins, backup, VAD, web auth, errors. Run locally with <code>pytest</code> in ~8 s; CI runs the same suite on every PR.</sub>
+
+</div>
+
+---
+
+## 🚀 Quick start
+
+### The fastest path — pre-built bundle
+
+```bash
+# On the Pi
+wget https://github.com/NaustudentX18/MiBud/releases/download/v3.0.0/mibud-3.0.0-bundle.tar.gz
+tar xzf mibud-3.0.0-bundle.tar.gz
+cd mibud-3.0.0
+sudo ./install.sh                 # apt deps → venv → wheel → systemd
+```
+
+Open **`http://mibud.local:5000`** and the setup wizard takes it from there.
+
+### From source (any platform)
 
 ```bash
 git clone https://github.com/NaustudentX18/MiBud.git
 cd MiBud
-bash scripts/setup.sh        # installs system deps, venv, Python packages
+pip install -e ".[full,dev]"     # cloud + offline + vad + dev extras
+mibud                             # or: python -m core.main
 ```
 
-### 2 — Configure (optional)
+### Just kick the tyres
 
 ```bash
-cp .env.example .env         # add your API keys if using cloud AI
-# edit config/config.json    # or use the web wizard on first boot
-```
-
-### 3 — Start MiBud
-
-```bash
-bash scripts/run.sh          # launches the full app
-# or run the web interface only:
-source venv/bin/activate && python -m web.server
-```
-
-### 4 — Open the dashboard
-
-Browse to **`http://mibud.local:5000`** (or your Pi's IP).  
-First-time? The **Setup Wizard** walks you through every option in under 5 minutes.
-
-### 5 — Validate your hardware
-
-```bash
-bash scripts/first_boot_check.sh
+python demo.py                    # mocked hardware, real personality + AI flow
 ```
 
 ---
 
-## 🆕 What's new in v3.0 "Aware"
+## 🆕 What's new in v3.0 *Aware*
 
-v3 focuses on the three things v2 didn't fully deliver — natural conversation,
-a real extensibility story, and field-ready resilience:
+v3 focuses on the three things v2 didn't fully deliver — **natural conversation**,
+a real **extensibility** story, and field-ready **resilience**.
 
-- 🗣️ **Barge-in + continuous dialog** — interrupt the assistant mid-sentence
-  and the mic re-opens immediately; follow-up questions land in the same
-  conversation window without re-saying the wake word.
-- 🔌 **MCP client** — point MiBud at any Model Context Protocol server
-  (stdio subprocess) and its tools auto-register into the LLM's tool
-  catalogue, namespaced so nothing collides with the built-ins.
-- 🧩 **Plugin loader** — drop a `.py` file in `plugins/` with `@tool`
-  decorators and the LLM can call it on next reload. Each plugin imports
-  in isolation so one bad file won't brick boot.
-- 💾 **Backup / restore** — one-call tar.gz export of config, memory DB
-  (consistent SQLite snapshot), personalities, and plugins. Restore is
-  path-traversal-safe and atomic.
-- 🎙️ **Silero VAD** — when the optional 2 MB ONNX model is present MiBud
-  swaps in a real neural VAD; otherwise it keeps the hysteretic RMS
-  detector. Both behind a common `VoiceActivityDetector` protocol.
-- 📜 **Conversation trace** — JSONL per-turn log with rotation, surfaced
-  through `/api/v3/trace`. Tracks listen/think/speak latencies, tool calls,
-  and barge-ins for latency debugging.
+| Area | What changed |
+| --- | --- |
+| 🗣️ **Barge-in** | Cancel a reply mid-sentence — the mic re-opens immediately, no wake word needed |
+| 🔁 **Continuous dialog** | Mic stays open for a tunable window after each turn |
+| 🔌 **MCP client** | Spawn any stdio MCP server; tools auto-register namespaced (`mcp_<server>_<tool>`) |
+| 🧩 **Plugin loader** | Drop a `.py` in `plugins/` with `@tool` — isolated import, hot-reload via API |
+| 💾 **Backup / restore** | Atomic tar.gz of config + SQLite memory snapshot + plugins; tarslip-safe restore |
+| 🎙️ **Silero VAD** | Optional 2 MB ONNX model when present, hysteretic RMS detector otherwise |
+| 📜 **Conversation trace** | JSONL per-turn log with rotation + ring buffer; surfaced via `/api/v3/trace` |
+| ⚙️ **Config v3** | Auto-migrates v1 → v2 → v3; new feature flags for every v3 subsystem |
+
+See the full [CHANGELOG](CHANGELOG.md).
 
 ---
 
-## 🆕 What's new in v2.0
+## 🧠 v2.0 still here
 
-MiBud just got a lot smarter on the same 512 MB of RAM:
-
-- 🧠 **Long-term memory** — remembers your name, preferences, routines, and past
-  conversations in a local SQLite store. Semantic recall is a single numpy
-  matmul, so it's still fast on a Pi Zero 2 W. Auto-upgrades to Ollama
-  `nomic-embed-text` when available; falls back to a zero-dep hashing embedder.
-- 🛠️ **Tool use** — MiBud can now actually *do* things. Set timers, create
-  reminders, take photos, describe what it sees, search the web, trigger Home
-  Assistant, toggle GPIO, read its own battery — all via LLM function calls.
-- 🗣️ **Streaming TTS** — first word leaves the speaker in under a second by
-  splitting tokens into sentences and starting TTS before the model is done.
-- 🔋 **Power profiles** — automatic ECO / BALANCED / PERFORMANCE switching
-  based on battery and charge state. Brightness, poll rates, and LLM token
-  budgets all follow.
-- 🔔 **Proactive engine** — low-battery announcements, reminder/timer firing,
-  morning greeting, idle check-ins — all respecting quiet hours and busy state.
-- 🛡️ **Hardened AI router** — per-provider circuit breaker, exponential backoff
-  retries, cached connectivity probe, moving-average latency metrics.
-- 🌐 **Web API v2** — SSE streaming chat, memory inspection/wipe, tool
-  invocation, power control, unified `/api/health`.
+Long-term memory, tool use, streaming TTS, power profiles, proactive engine,
+hardened router with circuit breakers, and the SSE chat API all carried over —
+just better integrated with the dialog/trace layers.
 
 ---
 
-## ✨ Features
+## 🧩 Hardware target
 
-### 🤖 AI Companionship
-- **20+ Unique Personalities** — Chef, Therapist, DJ, Teacher, Comedian and more
-- **Custom Personality Creator** — build your own via the web UI
-- **Dual AI Mode** — cloud + offline working in tandem
-- **Multi-Provider Support** — OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Ollama
+| Component | Model |
+|-----------|-------|
+| 🖥️ SBC | Raspberry Pi Zero 2 W |
+| 🎧 AI HAT | Whisplay AI HAT (ST7789 240×280 + WM8960) |
+| 🔋 Battery | PiSugar 3 (1200 mAh, I²C) |
+| 📷 Camera | Picamera2 / USB (optional) |
 
-### 🔒 Privacy First
-- **100 % Offline Mode** — no internet required with Ollama
-- **Local AI** — GGUF models via Ollama (Phi-3, TinyLlama, Mistral…)
-- **No Data Collection** — your conversations stay on your device
-
-### 🎤 Voice & Audio
-- **Wake Word Detection** — "Hey MiBud" activation
-- **Voice Activity Detection** — knows when you are speaking
-- **Push-to-Talk** — physical button on the HAT
-- **Multiple TTS Options** — OpenAI TTS, Piper (offline)
-
-### 📺 Whisplay HAT
-- **240×280 Display** — animations and UI themes
-- **20+ Themes** — matched to the active personality
-- **WM8960 Audio** — crystal-clear capture and playback
-- **RGB LED** — status at a glance
-- **GPIO Buttons** — short/long/hold actions
-
-### 🔋 Battery & Power
-- **PiSugar 3 Support** — 8+ h portable use
-- **Smart Power Management** — auto sleep/wake
-- **Battery Monitoring** — low-level warnings and LED indicators
-
-### 🌐 Web Interface
-- **Setup Wizard** — guided 8-step onboarding
-- **Live Dashboard** — chat, settings, system monitoring
-- **REST API** — integrate with anything
-
-### 📷 Vision (Optional)
-- **Camera Support** — Picamera2 (CSI) and USB cameras
-- **Image Understanding** — ask about what the camera sees
+Full pin map and driver setup in [`docs/HARDWARE.md`](docs/HARDWARE.md).
 
 ---
 
-## 📂 Project Structure
+## 🏗️ Architecture
+
+```
+                      ┌────────────────────────────────────┐
+                      │           DialogSession            │
+                      │  IDLE → LISTENING → THINKING       │
+                      │           ↑           ↓            │
+                      │           └─ SPEAKING ─┘ barge-in  │
+                      └─────────────┬──────────────────────┘
+                                    │
+       ┌────────────────────────────┼────────────────────────────┐
+       ▼                            ▼                            ▼
+  ┌──────────┐               ┌─────────────┐             ┌────────────────┐
+  │   VAD    │ audio frames  │   Router    │ tool calls  │     Memory     │
+  │ Silero / │ ────────────▶ │  OpenAI /   │ ──────────▶ │ SQLite + vecs  │
+  │   RMS    │               │  Anthropic /│             │ semantic recall│
+  └──────────┘               │  Ollama /…  │             └────────────────┘
+                             └──────┬──────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              ▼                     ▼                     ▼
+       ┌────────────┐        ┌────────────┐        ┌────────────┐
+       │   Tools    │        │  Plugins   │        │ MCP Client │
+       │  20+ built-│        │  user .py  │        │ stdio JSON │
+       │   ins      │        │   files    │        │ -RPC 2.0   │
+       └────────────┘        └────────────┘        └────────────┘
+              │                     │                     │
+              └─────────────────────┴─────────────────────┘
+                                    ▼
+                           ┌────────────────┐
+                           │ Streaming TTS  │
+                           │ sentence split │
+                           │  + barge-in    │
+                           └────────────────┘
+                                    ▼
+                           ┌────────────────┐
+                           │   TraceLog     │
+                           │  JSONL + stats │
+                           └────────────────┘
+```
+
+---
+
+## 📂 Project layout
 
 ```
 MiBud/
-├── core/               # State machine, config, event bus
-├── ai/                 # Multi-provider AI router, wake-word, TTS/STT
-├── personalities/      # 20+ preset personalities + custom manager
-├── hardware/           # Display, audio, buttons, battery, LED, camera
-├── web/                # Flask server, setup wizard, dashboard templates
-├── sync/               # Multi-device peer-to-peer sync
-├── home/               # Home automation (GPIO + Home Assistant)
-├── utils/              # Timers, reminders, notes
-├── scripts/            # setup.sh · run.sh · first_boot_check.sh
-├── deploy/             # mibud.service (systemd)
-├── docs/               # HARDWARE.md · FIRST_BOOT_VALIDATION.md
-├── tests/              # Unit and integration tests
-├── .env.example        # Environment variable template
-└── requirements.txt    # Python dependencies
+├── ai/               # router · tools · memory · streaming · MCP · plugins · trace · VAD
+├── core/             # state · config · main · dialog · power · proactive · backup
+├── hardware/         # display · audio · buttons · battery · LED · camera
+├── personalities/    # 20+ presets + manager
+├── web/              # Flask server · setup wizard · dashboard · v2/v3 API
+├── home/             # GPIO + Home Assistant
+├── sync/             # zeroconf peer-to-peer device sync
+├── utils/            # timers · reminders · notes · audio utils
+├── plugins/          # ← drop your own @tool .py files here
+├── packages/         # ← pre-built wheel + sdist + Pi bundle
+├── scripts/          # setup.sh · run.sh · first_boot_check.sh
+├── deploy/           # mibud.service (systemd)
+├── tests/            # 154 tests, ~8 s on a laptop
+└── docs/             # HARDWARE · FIRST_BOOT_VALIDATION
 ```
 
 ---
 
-## 🧠 AI Providers
+## 🌐 Web API
 
-### ☁️ Cloud (free tier available)
-| Provider | Models |
-|----------|--------|
-| OpenRouter | Gemini, Llama, Mixtral *(free tier)* |
-| OpenAI | GPT-4o with vision |
-| Anthropic | Claude 3.5 Sonnet |
-| Google | Gemini 2.0 Flash |
-| DeepSeek | DeepSeek Chat |
+### v1 — stable
 
-### 🖥️ Offline (local)
-| Provider | Models |
-|----------|--------|
-| Ollama | Phi-3, TinyLlama, Mistral, Qwen2 |
-
----
-
-## 🔧 Configuration
-
-Edit `config/config.json` (auto-created on first run):
-
-```json
-{
-    "ai": {
-        "default_provider": "openrouter",
-        "model": "google/gemini-2.0-flash-lite:free"
-    },
-    "personality": {
-        "current": "assistant"
-    },
-    "features": {
-        "enable_wake_word": true,
-        "enable_anomaly_detection": false,
-        "enable_multi_device_sync": false
-    }
-}
-```
-
-Or set API keys via environment variables — copy `.env.example` to `.env`.
-
----
-
-## 🌐 Web API (Quick Reference)
-
-### v1 (stable)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
+| Endpoint | Method | What |
+|----------|--------|------|
 | `/api/status` | GET | System state, battery, personality |
 | `/api/config` | GET / POST | Read or update config |
-| `/api/personality/list` | GET | All available personalities |
+| `/api/personality/list` | GET | Every available personality |
 | `/api/personality/create` | POST | Create a custom personality |
-| `/api/camera/capture` | GET | Capture image from camera |
-| `/api/system/info` | GET | CPU, RAM, storage |
-| `/api/alerts` | GET | Anomaly alert history |
+| `/api/camera/capture` | GET | Capture image |
+| `/api/system/info` | GET | CPU · RAM · storage |
 
-### v2 (new in 2.0)
+### v2 — intelligence layer
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Unified subsystem health (no auth) |
+| Endpoint | Method | What |
+|----------|--------|------|
+| `/api/health` | GET | Subsystem health (no auth — for watchdogs) |
 | `/api/chat/stream` | POST | SSE streaming chat |
-| `/api/memory/stats` | GET | Memory counters + session id |
-| `/api/memory/facts` | GET | List durable facts |
-| `/api/memory/search` | POST | Semantic recall across memory |
-| `/api/memory/fact` | POST / DELETE | Add / delete fact |
-| `/api/memory/profile` | GET / POST | Structured user profile |
-| `/api/memory/sessions` | GET | Recent session summaries |
-| `/api/memory/wipe` | POST | Nuke all memory (requires confirm) |
-| `/api/tools/list` | GET | Registered tool schemas |
-| `/api/tools/invoke` | POST | Call a tool directly |
-| `/api/power/status` | GET | Current power profile |
-| `/api/power/profile` | POST | Switch profile (auto / eco / balanced / performance) |
+| `/api/memory/{stats,facts,search,fact,profile,sessions,wipe}` | GET / POST / DELETE | Long-term memory |
+| `/api/tools/{list,invoke}` | GET / POST | Tool catalogue + direct invocation |
+| `/api/power/{status,profile}` | GET / POST | Power profile control |
 | `/api/providers/health` | GET | Circuit-breaker + latency metrics |
 
-### v3 (new in 3.0)
+### v3 — *Aware*
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v3/trace` | GET | Recent per-turn trace entries + stats (`?limit=N`) |
+| Endpoint | Method | What |
+|----------|--------|------|
+| `/api/v3/trace` | GET | Recent per-turn trace + stats (`?limit=N`) |
 | `/api/v3/backup` | POST | Export tar.gz of full device state |
 | `/api/v3/backup/inspect` | GET | Read a backup manifest without extracting |
-| `/api/v3/backup/restore` | POST | Restore from a backup (service restart required) |
-| `/api/v3/plugins` | GET | List loaded plugins + per-plugin status |
-| `/api/v3/plugins/reload` | POST | Rescan `plugins/` and re-import |
+| `/api/v3/backup/restore` | POST | Restore from a backup |
+| `/api/v3/plugins` | GET | List loaded plugins + status |
+| `/api/v3/plugins/reload` | POST | Re-scan `plugins/` |
 | `/api/v3/mcp` | GET | Status of every configured MCP server |
-| `/api/v3/dialog` | GET | Current dialog state, continuous mode, turn/barge-in counts |
-| `/api/v3/dialog/continuous` | POST | Enable/disable continuous conversation |
+| `/api/v3/dialog` | GET | Current state, continuous mode, turn / barge-in counts |
+| `/api/v3/dialog/continuous` | POST | Toggle continuous dialog |
+
+All non-`/api/health` routes are PIN-protected once setup completes.
 
 ---
 
@@ -296,42 +279,88 @@ Or set API keys via environment variables — copy `.env.example` to `.env`.
 
 | Metric | Target |
 |--------|--------|
-| Startup time | < 30 s |
-| Voice response (cloud) | ~ 2.5 s |
-| Voice response (Ollama) | ~ 4 s |
-| Memory usage | ~ 180 MB |
-| Battery life | 8–10 h |
+| 🥾 Boot to ready | < 30 s |
+| 💬 Voice response (cloud) | ~ 2.5 s |
+| 💬 Voice response (Ollama) | ~ 4 s |
+| 🗣️ First spoken sentence | < 1 s (streaming) |
+| 🧠 RAM resident | ~ 180 MB |
+| 🔋 Battery life | 8–10 h |
+| 🧪 Test suite (laptop) | ~ 8 s · 154 tests |
+
+---
+
+## 📦 Packages
+
+Pre-built artifacts live in [`packages/`](packages/) and are also attached to
+each release.
+
+| File | Use it for |
+|------|------------|
+| `mibud-3.0.0-py3-none-any.whl` | `pip install` on any platform |
+| `mibud-3.0.0.tar.gz` | Source distribution (sdist) |
+| `mibud-3.0.0-bundle.tar.gz` | **Pi drop-in** — source + wheel + `install.sh` |
+| `install.sh` | Bare installer (apt, venv, wheel, systemd) |
+
+```bash
+# Laptop
+pip install packages/mibud-3.0.0-py3-none-any.whl[cloud,offline,vad]
+mibud
+
+# Pi
+sudo ./packages/install.sh        # everything in one shot
+```
+
+Extras: `cloud` · `offline` · `vad` · `pi` · `full` · `dev`. Detail in
+[`packages/README.md`](packages/README.md).
 
 ---
 
 ## 🛠️ Development
 
 ```bash
-# Setup
 python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[full,dev]"
 
-# Run tests
-python -m pytest tests/ -v
-
-# Lint
-ruff check .
-
-# Demo mode (no hardware needed)
-python demo.py
+pytest -q                              # 154 tests, ~8 s
+ruff check .                           # lint
+python -m build --outdir packages/     # rebuild wheel + sdist
+python assets/generate.py              # regenerate the README screenshots
 ```
+
+CI runs `ruff` + `pytest` on every PR — see
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+---
+
+## 🔌 Build a plugin in 10 lines
+
+```python
+# plugins/coin_flip.py
+import random
+from ai.tools import tool
+
+@tool(description="Flip a coin and return heads or tails.")
+def coin_flip() -> str:
+    return random.choice(["heads", "tails"])
+```
+
+Drop the file in `plugins/`, call `POST /api/v3/plugins/reload`, and the LLM
+can call it on the next turn. Each plugin imports in its own namespace — a
+broken file logs an error and the rest still load.
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Camera vision integration with cloud AI
-- [ ] Advanced TTS — Piper offline voice cloning
-- [ ] Wake-word model fine-tuning
-- [ ] Community personality sharing
-- [ ] Mobile companion app
+- [ ] Camera vision wired into the streaming router (v3.1)
+- [ ] Piper offline voice cloning per personality
+- [ ] Wake-word fine-tuning recipe
+- [ ] Community personality / plugin marketplace
+- [ ] Mobile companion app (BLE pairing)
 - [ ] Hardened power-loss recovery
-- [ ] Release packaging pipeline
+- [x] Distribution packaging pipeline (✅ v3.0)
+- [x] Conversation trace + replay (✅ v3.0)
+- [x] MCP + plugin extensibility (✅ v3.0)
 
 ---
 
@@ -339,23 +368,26 @@ python demo.py
 
 | Doc | Description |
 |-----|-------------|
-| [docs/HARDWARE.md](docs/HARDWARE.md) | Pin map, driver setup, HAT wiring |
-| [docs/FIRST_BOOT_VALIDATION.md](docs/FIRST_BOOT_VALIDATION.md) | Step-by-step boot validation |
+| [docs/HARDWARE.md](docs/HARDWARE.md) | Pin map · driver setup · HAT wiring |
+| [docs/FIRST_BOOT_VALIDATION.md](docs/FIRST_BOOT_VALIDATION.md) | Step-by-step validation |
+| [packages/README.md](packages/README.md) | Distribution + installer details |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+| [SECURITY.md](.github/SECURITY.md) | Reporting vulnerabilities |
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome — bugs, features, docs, new personalities, hardware tests.  
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Bugs, features, docs, new personalities, hardware tests — all welcome.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md)
+before opening a PR.
 
 ---
 
 ## 📜 License
 
-[MIT License](LICENSE) — free to use, modify, and distribute.
+[MIT](LICENSE) — free to use, modify, ship. Just keep the notice.
 
 ---
 
@@ -363,11 +395,6 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) and follow our [Code of Conduct](
 
 **Own it. Control it. Trust it. 🔒**
 
-```
-╔═══════════════════════════════════════╗
-║         MiBud — AI Companion          ║
-║   Privacy-First · Offline-First       ║
-╚═══════════════════════════════════════╝
-```
+<sub>Built with ☕ and stubbornness for the Pi Zero 2 W.</sub>
 
 </div>
